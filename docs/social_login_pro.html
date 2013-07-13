@@ -1,0 +1,387 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+  <title>Social Login PRO</title>
+
+  <style type="text/css" media="screen,print">@import url("docs.css");</style>
+<META http-equiv=Content-Type content="text/html; charset=utf-8"></head>
+
+<body>
+<div><a name="top"></a></div>
+
+<div id="header">
+<table cellpadding="0" cellspacing="0" border="0" style="width:100%;"><tr>
+<td class="docheading" style="width:300px;"><h1 style="font-size: 18px; font-weight: bold;">intoEEtive.com</h1></td>
+<td class="searchbox">
+
+</td>
+</tr>
+</table>
+</div>
+
+
+<div id="navlinks">
+<a href="http://www.intoeetive.com/">intoEEtive.com</a> &gt;
+<a href="http://www.intoeetive.com/index.php/category/extending_ee">EE add-ons</a> &gt;
+<a href="http://www.intoeetive.com/index.php/comments/social-login-pro">Social Login PRO</a>
+</div>
+
+
+<div id="content">
+
+	<h1>Social Login PRO</h1>
+
+	<p>Social Login module enables people to log in into your ExpressionEngine site using their account in social network that support OAuth authentication. PRO version of module has number of extra features (easy way to bind social account to logged in member; automatically follow user; post to social networks about member's activity on your site).</p>
+    
+   	<ul>
+		
+        
+        <li><a href="#general">General concept</a></li>
+        <li><a href="#installation">Installation</a></li>
+        <li><a href="#settings">Settings</a>
+            <ul>
+                <li><a href="#facebook">Facebook</a></li>
+                <li><a href="#twitter">Twitter</a></li>
+                <li><a href="#linkedin">LinkedIn</a></li>
+                <li><a href="#windows">Windows Live ID</a></li>
+                <li><a href="#yahoo">Yahoo!</a></li>
+                <li><a href="#google">Google</a></li>
+                <li><a href="#instagram">Instagram</a></li>
+                <li><a href="#vkontakte">VK.com</a></li>
+                <li><a href="#appdotnet">App.net</a></li>
+            </ul>
+        </li>
+        <li><a href="#login">Logging in</a></li>
+        <li><a href="#addaccount">Adding social account for existing member</a></li>
+        <li><a href="#post">Posting updates</a>
+            <ul>
+                <li><a href="#post">Concept</a></li>
+                <li><a href="#posttemplates">Templates</a></li>
+                <li><a href="#postprefs">Preferences form</a></li>
+            </ul>
+        </li>
+        <li><a href="#userdata">Adding userdata (email, password)</a></li>
+        <li><a href="#tokens">Displaying saved tokens</a></li>
+        <li><a href="#examples">Examples</a></li>
+	</ul>
+
+	<h2><a name="general"></a>General concept</h2>
+    
+<p>To let people log into your site using their accounts on Facebook/Twitter/etc. you should place {exp:social_login_pro:form} form on your pages. You can style it with javascript (so that it will not looks as a form) or even hardcode login links (see <a href="#examples">examples</a> section).</p>
+<p>When the user clicks login button (submits the form), he is brought to the site of corresponding service provider (social network) where he is asked to authorise your site. After he authorises it by clicking appropriate button/links, he is brought back to your site (any page that you specify as return).</p>
+<p>If the member with given social network ID is already registered in your site, he is logged in into his account. Otherwise new account is created for him.</p>
+<p>From the technical point of view, whenever a new person is trying to log in, a record is created in members database table. However the user does not get any notification about created account, he's just logged in. A custom profile field containing username/ID in social network is used to identify returning visitor.</p>
+    
+    
+	<h2><a name="installation"></a>Installation</h2>
+    
+<p>Place /social_login_pro and /shorteen folders into your /third_party folder. Make sure you also upload themes and images folders into appropriate places. Then go to Modules section in EE Control Panel and click Install near Social Login PRO. Be sure to install both module and extension.</p>
+<p>Shorteen module will be installed authomatically.</p>
+<p>If you already have Social Login installed, the settings will be copied for Social Login PRO and the module de-installed.</p>    
+    
+	<h2><a name="settings"></a>Settings</h2>
+    
+<p>Because Social Login PRO is MSM-compatible module, the settings are saved separately for each site. </p>
+<p>The general settings are:<br />
+- <strong>Member group to assign</strong>. The membership group that will be used fro people who try to log in using this module (and not registered with your site yet). It is recommended that you create separate group for them. (can be overridden by setting tag parameter in template)<br />
+- <strong>Set to Pending if email cannot be obtained</strong>. If email address cannot be obtained from social network, you can force the account to be Pending (but person can still log in in order to provide email using add_userdata form). When email is added thoguh add_userdata form and you've set Self-activation via email in EE membership preferences, email with activations instructions is sent to user.<br />
+- <strong>Graphical set (icons type/size) to use</strong>. The set of icons to be used by frontend form tag. Can be overridden by using form parameter. By default available are different square icons and horizonal bars. You can also use your own icons set by placing images into your themes/third_party/social_login/&lt;your_icons_set_name&gt; folder. The images should be in PNG format and named like &lt;provider_name&gt;.png (ex. twitter.png)
+- <strong>URL shortening service</strong>. Third-party service to be used for URL shortening when posting status updates to social networks. The shortening is donw with the help of <a href="http://www.intoeetive.com/docs/shorteen.html" target="_blank">Shorteen</a> module - please be sure to provide appropriate API keys in its settings.<br />
+- <strong>Prevent duplicate social account association</strong>. If you check this setting the user will see a warning if he tries to associate account in social network with his EE account, and that social account is already associated with other EE account (e.g. by editing custom profile fields)<br />
+</p>    
+<p>You can also optionally set custom fields that will be filled with First name, Last name, Full name and Gender ('m' or 'f'). Note that not all social networks provide that kind of data.</p>
+<p>All other settings are provider-specific. As a general rule, you will need to provide application/customer ID, secret key, custom profile field to store the username used by service provider/social network and check whether you want to send status updates to this network on user's behalf.<br />
+The custom field is mandatory and will be used to identify whether person trying to login using external service is already registered at your site. You should use separate field for each service provider.</p>
+<p>Posting templates are described in separate <a href="#post">section</a></p>
+
+	<h4><a name="facebook"></a>Facebook</h4>
+
+<p>To use Facebook logins, you need to register your site at <a href="http://developers.facebook.com/setup/" target="_blank">http://developers.facebook.com/setup/</a>. After you finish the registration, you'll be provided Application ID and Secret key. Input those values into appropriate fields. Select a custom profile field to store Facebook username and choose whether you want to send updates to Facebook on user's behalf.</p>
+
+	<h4><a name="twitter"></a>Twitter</h4>
+
+<p>To let people login using Twitter, you need to register your site at <a href="https://dev.twitter.com/apps/new" target="_blank">https://dev.twitter.com/apps/new</a>. Use your website name as Application Name. The Application Type is Browser and Default Access type you need is Read and Write. You can use your site homepage as Callback URL - it will be set dynamically, so you don't have to worry about it. After you finish the registration, you'll need to provide module settings with given Consumer key (<strong>not</strong> API key) and Consumer secret. Select a custom profile field to store Twitter username and choose whether you want to send tweets on user's behalf.</p>
+<p>If you have Twitter account where you post updates from your site, you can enter it's name and people will be authomatically following it once logged in.</p>
+<p class="important">Twitter is not sharing user's email address, so email is not stored for people who log in using Twitter</p>
+
+<p class="important">Make sure you specify something as callback URI in Twitter app settings. Though it will be overridden, this field should not be empty.</p>
+
+	<h4><a name="linkedin"></a>LinkedIn</h4>
+
+<p>To let people login using LinkedIn, you need to register your website using <a href="https://www.linkedin.com/secure/developer" target="_blank">https://www.linkedin.com/secure/developer</a>. If you only want to let people log in - it is enough to fill only the required fields. After you finish the registration, you'll need to provide module settings with given API key and Secret ket. Select a custom profile field to store LinkedIn ID and choose whether you want to send updates to LinkedIn on user's behalf.<br />
+NOTE: we are using LinkedIn ID and not URL to identify user, because one can set the profile to be hidden - but still use it to log in. 
+</p>
+<p class="important">Just like Twitter, LinkedIn is not sharing user's email address, so it is not stored</p>
+
+
+	<h4><a name="windows"></a>Windows / Live ID</h4>
+
+<p>To let people login using their Windows account (formerly Live ID), you need to register your website using <a href="https://manage.dev.live.com/Applications/Create" target="_blank">https://manage.dev.live.com/Applications/Create</a>. If you only want to let people log in - it is enough to fill only the required fields. After you finish the registration, you'll need to provide module settings with given API key and Secret ket. Select a custom profile field to store Windows ID.</p>
+
+	<h4><a name="yahoo"></a>Yahoo!</h4>
+
+<p>To use logins using Yahoo! ID, you need to register your site at <a href="https://developer.apps.yahoo.com/projects/" target="_blank">https://developer.apps.yahoo.com/projects/</a>. Register as Standard Project, select "This app requires access to private user data" and then select "Read/Write Public" under "Social Directory (Profiles)". After you finish the registration, you'll be provided Consumer Key and Consumer Secret. Input those values into appropriate fields. Select a custom profile field to store Yahoo! ID (note that it is stored in "short" form, i.e. username only) and choose whether you want to send updates to Yahoo! on user's behalf.</p>
+
+	<h4><a name="google"></a>Google</h4>
+
+<p>To enable logins using Google account, you need to register your site at <a href="https://www.google.com/accounts/ManageDomains" target="_blank">https://www.google.com/accounts/ManageDomains</a>. After you finish the registration, you'll be given OAuth Consumer Key and OAuth Consumer Secret. Input those values into appropriate fields. Select a custom profile field to store Gmail address, which will be used as returning visitor identifier.</p>
+<p class="important">Google is currently supported only for authentication, as there is no public API yet for Google+</p>
+
+	<h4><a name="instagram"></a>Instagram</h4>
+
+<p>To use Instagram logins, you need to register your site at <a href="http://instagram.com/developer/clients/register/" target="_blank">http://instagram.com/developer/clients/register/</a>. After you finish the registration, you'll be provided Client ID and Client Secret. Input those values into appropriate fields. Select a custom profile field to store Instagram username.</p>
+<p>If you have Instagram account associated with your site, you can enter it's ID (not username!) and people will be authomatically following it once logged in. You can use <a href="http://yvesvanbroekhoven.github.com/get-your-instagram-user-id/" target="_blank">this link</a> to learn your ID</p>
+<p class="important">Instagram is not sharing user's email address</p>
+
+	<h4><a name="vkontakte"></a>VK.com</h4>
+
+<p>To let people login using their VKontakte (VK.com) account, you need to register your website at <a href="http://vkontakte.ru/editapp?act=create&site=1" target="_blank">http://vkontakte.ru/editapp?act=create&site=1</a>. After you finish the registration, you'll need to provide module settings with given Aplication ID and Secret key. Select a custom profile field to store vKontakte ID.
+</p>
+<p class="important">VKontakte is also not sharing user's email address, so it is not stored initially</p>
+<p class="important">VKontakte does not yet support posting messages to user's wall from web applications</p>
+
+	<h4><a name="appdotnet"></a>App.net</h4>
+
+<p>To use App.net logins, you need to have Developer account. Register your site at <a href="https://alpha.app.net/developer/app/create/" target="_blank">https://alpha.app.net/developer/app/create/</a>. After you finish the registration, you'll be provided Client ID and Client Secret. Input those values into appropriate fields. Select a custom profile field to store App.net username.</p>
+<p>You can enter your App.net username in settings and people will be authomatically following it once logged in and choose whether you want to send updates on user's behalf. </p>
+<p class="important">Instagram is not sharing user's email address</p>
+
+	<h2><a name="login"></a>Logging in</h2>
+
+<p>Place <strong>{exp:social_login_pro:form}</strong> wherever you want login form to appear. You can have multiple form instances on page.</p>
+<p>Parameters:</p>
+<ul>
+<li><strong>return</strong> &mdash; a page to return after login (either successful or failed). Can be a full URL or URI segments.<br />Use <em>return="SAME_PAGE"</em> to return user to the page used to display login form.</li>
+<li><strong>no_email_return</strong> &mdash; a page to return after login if user email is not set or cannot be obtained</li>
+<li><strong>providers</strong> &mdash; if you have settings for several social networks, but want to limit certain form just with some of them, list them in this parameter (pipe | separated, optional). Ex. providers="twitter|facebook"</li>
+<li><strong>icon_set</strong> &mdash; you can specify other icon set to be used for certain form than one provided in settings. Ex. icon_set="24x24"</li>
+<li><strong>group_id</strong> &mdash; if this is member's first login, you can set membership group for hime (overriding value in the settings)</li>
+<li><strong>id</strong> &mdash; form ID. Defaults to 'social_login_form'</li>
+<li><strong>class</strong> &mdash; form CSS class. Defaults to 'social_login_form'</li>
+<li><strong>name</strong> &mdash; form name. Defaults to 'social_login_form'</li>
+<li><strong>popup="yes"</strong> &mdash; open the authentication dialog in popup window</li>
+</ul>
+
+<p>Form fields:</p>
+<ul>
+<li><strong>provider</strong> &mdash; name of external login service provider to use. Can be hardcoded or auto-populated using {providers} tag pair</li>
+<li><strong>auto_login</strong> &mdash; "Keep me logged in" checkbox. The value should be "1". (This will work only if your session type is "cookies only")</li>
+<li><strong>anon</strong> &mdash; 'Do not show me in "who's online" list' checkbox. The value should be "1".</li>
+</ul>
+
+<p>Inside of <strong>{providers}</strong> tag pair following variables are availabe:</p>
+<ul>
+<li><strong>{provider_name}</strong> &mdash; provider name. This is 'technical' variable, should be used as value for 'provider' input field.</li>
+<li><strong>{provider_title}</strong> &mdash; the 'full' name/title of service provider/social network</li>
+<li><strong>{provider_icon}</strong> &mdash; URL for image/button for corresponding provider (from the icons set defined in settings)</li>
+</ul>
+
+<p>You can optionally apply <strong>backspace="xx"</strong> parameter to {providers} tag pair to remove xx last characters from output result.</strong></p>
+
+<p>If you use Cookie Consent module, you need to add "allow_cookies" field to your form.</p>
+
+<div class="highlight-ee"><div class="highlight"><pre><span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&#39;checkbox&#39;</span> <span class="na">name=</span><span class="s">&#39;cookie_consent&#39;</span> <span class="na">value=</span><span class="s">&#39;y&#39;</span><span class="nt">/&gt;</span><span class="ni">&amp;nbsp;&amp;nbsp;</span><span class="nt">&lt;span</span>  <span class="na">class=</span><span class="s">&quot;alert&quot;</span><span class="nt">&gt;</span>Allow Cookies<span class="nt">&lt;/span&gt;</span></div></div>
+
+	<h2><a name="addaccount"></a>Adding social account for existing member</h2>
+
+<p>Unlike 'basic' version of Social Login, PRO version allows the login form to be displayed to already logged in user. In this case, it will be used to add other social network accounts/logins to EE member account. If some accounts have already been added for member, they will not be displayed in the form.</p>
+
+	<h2><a name="post"></a>Posting updates</h2>
+    
+	<h4>Concept</h4>    
+    
+<p>PRO version of Social Login is able to post updates back to social networks people use to log in regarding their activity on your site. The updates are sent under their name.</p>
+<p>If you do not want to send updates to certain social networks (or to all of them), uncheck the appropriate (or all) checkboxes on settings page.</p>    
+<p>All links in messages are shortened using the service you selected in settings.</p>
+<p>Currently there are 4 events upon which updates can be sent:<br />
+&mdash; user resisters on your site using Social Login<br />
+&mdash; user publishes an entry<br />
+&mdash; user submits a comment<br />
+&mdash; user starts new forum thread
+</p>
+
+<h4><a name="posttemplates"></a>Templates</h4>   
+
+<p>The templates for each type of update can be edited on Posting templates tab of module control panel.</p>
+<p>To completely disable certain type of notification, uncheck the appropriate "Enable posting using this template?" checboxes.</p>
+
+<p><strong>Member registered</strong></p>
+<p>This template is used for message sent when user logs it first time/registers on you site.</p>
+<p>Following variables are available for use in template:<br />
+&mdash; {site_name}<br />
+&mdash; {site_url}</p>
+ 
+ <p><strong>Entry published</strong></p>
+<p>This template is used for message sent when user publishes an entry (only with 'open' status).</p>
+<p>Following variables are available for use in template:<br />
+&mdash; {site_name}<br />
+&mdash; {title} - entry title<br />
+&mdash; {url_title} - entry URL title<br />
+&mdash; {channel_short_name} - channel short name<br />
+&mdash; {channel} - channel title<br />
+&mdash; {permalink} - link to entry based on channel settings and URL title<br />
+&mdash; {title_permalink} - same as {permalink}<br />
+&mdash; {entry_id_permalink} - link to entry based on channel settings and entry ID<br />
+&mdash; {my_custom_field} - all custom fields are available (but formatting not applied)
+</p>
+
+ <p><strong>Comment posted</strong></p>
+<p>This template is used for message sent when user submits a comment (only to entry with 'open' status).</p>
+<p>Following variables are available for use in template:<br />
+&mdash; {site_name}<br />
+&mdash; {title} - entry title<br />
+&mdash; {url_title} - entry URL title<br />
+&mdash; {channel_short_name} - channel short name<br />
+&mdash; {channel} - channel title<br />
+&mdash; {permalink} - link to entry based on channel settings and URL title<br />
+&mdash; {title_permalink} - same as {permalink}<br />
+&mdash; {entry_id_permalink} - link to entry based on channel settings and entry ID<br />
+&mdash; {comment} - full comment text<br />
+&mdash; {comment_id} - comment ID
+</p>
+
+ <p><strong>Forum thread started</strong></p>
+<p>This template is used for message sent when user starts new forum thread (only in live/not hidden forums).</p>
+<p>Following variables are available for use in template:<br />
+&mdash; {site_name}<br />
+&mdash; {title} - thread title<br />
+&mdash; {forum_name} - parent forum name<br />
+&mdash; {forum_id} - parent forum ID<br />
+&mdash; {board_name} - forum board name<br />
+&mdash; {board_id} - forum board name (don't think anyone will need this...)<br />
+&mdash; {permalink} - link to this thread
+</p>
+
+<h4><a name="postprefs"></a>Preferences form</h4>
+
+
+<p>It would be a smart idea to let people control whether they want updates to be sent to social networks under their name or not.</p>
+<p>To let people contol this, place {exp:social_login_pro:permissions} form somewhere on your pages - it will display form to edit member's posting permissions.</p>
+<p>The permissions are saved separately for each site if you use MSM. Members are able to check/uncheck permissions for each event (except Member registered, as it is sent only once).</p>
+<code>
+{exp:social_login_pro:permissions return="thanks"}<br />
+{permissions}<br />
+&lt;p&gt;&lt;input type="checkbox" value="y" name="{field_name}"{checked}/&gt; {title} &lt;/p&gt;<br />
+{/permissions}<br />
+&lt;input type="submit" value="save" /&gt;<br />
+{/exp:social_login_pro:permissions}
+</code>
+
+
+	<h2><a name="userdata"></a>Adding userdata (email, password)</h2>
+    
+<p>In case when email address has not been provided by social network, you may want to ask user for it. You may also want to let people set their own password (if you want to let them login with username/password, or edit username etc.)</p>
+<p>For this purpose, you can use form generated with <strong>{exp:social_login_pro:add_userdata}</strong> tag pair.</p>
+<p>Here's and example to give you idea:</p>
+<code>
+{exp:social_login_pro:add_userdata return="SAME_PAGE" id="userdata_form"}<br />
+{email_block}<br />
+&lt;p&gt;Please let us know your email address:&lt;br /&gt;<br />
+&lt;input type="text" name="email" /&gt;<br />
+&lt;/p&gt;<br />
+{/email_block}<br />
+{password_block}<br />
+&lt;p&gt;For additional security, you may create password to protect your account:&lt;br /&gt;<br />
+&lt;input type="password" name="password" /&gt;<br />
+&lt;/p&gt;<br />
+&lt;p&gt;Confirm password:&lt;br /&gt;<br />
+&lt;input type="password" name="password_confirm" /&gt;<br />
+&lt;/p&gt;<br />
+{/password_block}<br />
+&lt;input type="submit" value="Save" /&gt;<br />
+{/exp:social_login_pro:add_userdata}<br />
+</code>
+<p>The form is displayed only when user is logged in and either email or password fields are empty. The contents of {email_block} is displayed only when email is empty. The contents of {password_block} is displayed only when password is empty.</p>
+
+	<h2><a name="tokens"></a>Displaying saved tokens</h2>
+
+<p>If you need to use oAuth tokens associated with user account for work with other module, you can access them by using <strong>{exp:social_login_pro:tokens}</strong> tag.</p>
+<code>
+{exp:social_login_pro:tokens}<br />
+&lt;p&gt;<br />
+&lt;img src="{provider_icon}" id="img_{provider_name}" /&gt; {provider_title}<br />
+{if oauth_token}&lt;br /&gt;Token: {oauth_token}{/if}<br />
+{if oauth_token_secret}&lt;br /&gt;Secret: {oauth_token_secret}{/if}<br />
+&lt;/p&gt;<br />
+{/exp:social_login_pro:tokens}
+</code>
+<p>For Yahoo! accounts, there's also {guid} variable available.</p>
+<p>You can also use this tag to display ID of user in social network (additionally to username, which is stored in custom field). Use {user_id} variable.</p>
+
+
+	<h2><a name="examples"></a>Examples</h2>
+    
+<p>Basic example with radio buttons</p>
+<code>
+{if logged_in}<br />
+{screen_name}--{username}--&lt;a href="{path=LOGOUT}"&gt;Log out&lt;/a&gt;<br />
+{/if}<br />
+{exp:social_login_pro:form return="comments/social-login"}<br />
+{providers}<br />
+&lt;input name="provider" type="radio" value="{provider_name}" id="{provider_name}_button"&gt;<br />
+&lt;label for="{provider_name}_button"&gt;&lt;img src="{provider_icon}" title="Log in using {provider_title}" /&gt;&lt;/label&gt;<br />
+&lt;br /&gt;<br />
+{/providers}<br />
+&lt;input type="submit" value="proceed" /&gt;<br />
+{/exp:social_login_pro:form}   <br />
+</code>
+
+<p>Example with auto-submitting dropdown select</p>
+<code>
+{if logged_in}<br />
+{screen_name}--{username}--&lt;a href="{path=LOGOUT}"&gt;Log out&lt;/a&gt;<br />
+{/if}<br />
+{exp:social_login_pro:form return="comments/social-login"}<br />
+Login using: <br />
+&lt;select name="provider" onchange="document.getElementById('social_login_form').submit()"&gt;<br />
+&lt;option value=""&gt;--select a service--&lt;/option&gt;<br />
+{providers}<br />
+&lt;option value="{provider_name}"&gt;{provider_title}&lt;/option&gt;<br />
+{/providers}<br />
+&lt;/select&gt;<br />
+&lt;input type="checkbox" name="auto_login" value="1" /&gt;Keep me logged in
+{/exp:social_login_pro:form}  
+</code>
+
+<p>Hardcoded login links</p>
+<p>Replace 67 with the value of ACT input in the form (you can also find its value on module settings page in CP). RET variable is optional and can point to relative URL to redirect after login (full URLs will not work here)</p>
+<code>
+&lt;a href="http://www.mydomain.com/?ACT=67&provider=facebook&RET=/index.php/comments/social-login"&gt;&lt;img src="http://www.mydomain.com/themes/third_party/social_login/bar/facebook.png" title="Log in using Facebook" /&gt;&lt;/a&gt;  
+</code>
+
+<p>JavaScript-styled form</p>
+<code>
+{exp:jquery:script_tag}<br />
+&lt;script type="text/javascript"&gt;<br />
+$(document).ready(function(){<br />
+    $('.extlogin').click(function(){<br />
+        $('#social_login_form input[name=provider]').val($(this).attr('rel'));<br />
+        $('#social_login_form').submit();<br />
+    });<br />
+});<br />
+&lt;/script&gt;<br />
+{exp:social_login_pro:form return="SAME_PAGE"}<br />
+&lt;input type="hidden" name="provider" value="" /&gt;<br />
+{providers}<br />
+&lt;a href="javascript:void(0)" class="extlogin" rel="{provider_name}" title="{provider_title}"&gt;&lt;img src="{provider_icon}" alt="{provider_title}" /&gt;&lt;/a&gt;<br />
+{/providers}<br />
+{/exp:social_login_pro:form}  
+</code>
+
+
+</div>
+
+
+<p class="center"><a href="#top">Top of page</a></p>
+
+<!-- {user_guide_comments} -->
+
+<div id="footer">
+  <address>Copyright &copy; 2011 Yuri Salimovskiy <a href="http://www.intoeetive.com/">intoEEtive.com</a></address>
+</div>
+
+</body>
+</html>

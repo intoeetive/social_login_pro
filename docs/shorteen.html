@@ -1,0 +1,104 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+  <title>Shorteen</title>
+
+  <style type="text/css" media="screen,print">@import url("docs.css");</style>
+<META http-equiv=Content-Type content="text/html; charset=utf-8"></head>
+
+<body>
+<div><a name="top"></a></div>
+
+<div id="header">
+<table cellpadding="0" cellspacing="0" border="0" style="width:100%;"><tr>
+<td class="docheading" style="width:300px;"><h1 style="font-size: 18px; font-weight: bold;">intoEEtive.com</h1></td>
+<td class="searchbox">
+
+</td>
+</tr>
+</table>
+</div>
+
+
+<div id="navlinks">
+<a href="http://www.intoeetive.com/">intoEEtive.com</a> &gt;
+<a href="http://www.intoeetive.com/index.php/category/extending_ee">EE add-ons</a> &gt;
+<a href="http://www.intoeetive.com/index.php/comments/shorteen">Shorteen</a>
+</div>
+
+
+<div id="content">
+
+	<h1>Shorteen</h1>
+
+	<p>Shorteen lets you shorten your URLs using wide range of shortening services - third-party and self-hosted.</p>
+    
+   	<ul>
+		
+        
+        <li><a href="#usage">Usage</a></li>
+        <li><a href="#settings">Settings</a></li>
+	</ul>
+
+	<h2><a name="usage"></a>Usage</h2>
+    
+<code>
+{exp:shorteen:process service="bitly" url="http://www.ellislab.com"}
+</code>    
+<p>Parameters:</p>
+<ul>
+<li><strong>url</strong> &mdash; URL to shorten. If omited, will shorten URL of current page.</li>
+<li><strong>service</strong> &mdash; shortening service to use. Possible values:
+    <ul>
+        <li><ins>googl</ins> &mdash; <a href="http://goo.gl">goo.gl</a> (default)</li>
+        <li><ins>isgd</ins> &mdash; <a href="http://is.gd">is.gd</a></li>
+        <li><ins>bitly</ins> &mdash; <a href="http://bitly.com">bit.ly</a> (default)</li>
+        <li><ins>yourls</ins> &mdash; <a href="http://yourls.org">YOURLS</a> based service (running on any domain)</li>
+        <li><ins>lessn-more</ins> &mdash; <a href="http://lessnmore.net/">Lessn More</a> based service (running on any domain)</li>
+    </ul>
+</li>
+</ul>
+
+<p>The shortest form of tag would be <em>{exp:shorteen:process}</em> &mdash; shortens URL of current page using goo.gl</p>
+<p>If service is not available or some data are missing in settings, the module will return the 'initial' long URL.</p>
+  
+    
+	<h2><a name="settings"></a>Settings</h2>
+    
+<p>Some shortening services are available openly for everyone, and some require providing API key and/or other data. You need to provide those in module settings.</p>
+
+<h4>goo.gl</h4>
+<p>To acquire an API key, visit the <a href="https://code.google.com/apis/console">APIs Console</a>. In the Services pane, activate the Google URL Shortener API; if the Terms of Service appear, read and accept them.<br />
+
+Next, go to the <a href="https://code.google.com/apis/console#access">API Access</a> pane. The API key is near the bottom of that pane, in the section titled "Simple API Access."</p>
+
+<h4>bit.ly</h4>
+
+<p>To get started, you'll need a free bitly user account and apiKey. Signup at: <a href="http://bitly.com/a/sign_up">http://bitly.com/a/sign_up</a>
+
+If you already have an account, you can find your apiKey at: <a href="http://bit.ly/account/your_api_key">http://bit.ly/account/your_api_key</a></p>
+
+<h4>YOURLS</h4>
+
+<p>If you have YOURLS running on you own domain, you need to specify service URL (where script is installed) and secret signature token. The signature can be found on http://yourls-address/admin/tools.php</p>
+
+<h4>Lessn More</h4>
+
+<p>If you have Lessn More running on you own domain, you need to specify service URL (where script is installed) and API key (displayed when you log in to Lessn More).</p>
+
+</div>
+
+
+<p class="center"><a href="#top">Top of page</a></p>
+
+<!-- {user_guide_comments} -->
+
+<div id="footer">
+  <address>Copyright &copy; 2011 Yuri Salimovskiy <a href="http://www.intoeetive.com/">intoEEtive.com</a></address>
+</div>
+
+</body>
+</html>
