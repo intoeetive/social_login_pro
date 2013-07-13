@@ -185,8 +185,8 @@ class Shorteen {
         if (ini_get('open_basedir') == '' && ini_get('safe_mode' == 'Off'))
         {
             curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_COOKIEFILE, '/dev/null');
         }
-        curl_setopt($ch, CURLOPT_COOKIEFILE, '/dev/null');
         if ($auth_type=='digest')
         {
             curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);

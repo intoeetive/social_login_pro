@@ -39,6 +39,15 @@ class Social_login_pro_mcp {
         $this->settings = unserialize($query->row('settings')); 
         $this->EE->lang->loadfile('shorteen');
         $this->EE->lang->loadfile('social_login_pro');
+        
+        if ($this->EE->config->item('app_version')>=260)
+        {
+        	$this->EE->view->cp_page_title = lang('social_login_pro_module_name');
+        }
+        else
+        {
+        	$this->EE->cp->set_variable('cp_page_title', lang('social_login_pro_module_name'));
+        }
     } 
     
     function index()
@@ -236,8 +245,6 @@ class Social_login_pro_mcp {
         
         $this->EE->javascript->output(str_replace(array("\n", "\t"), '', $outputjs));
         
-        $this->EE->cp->set_variable('cp_page_title', lang('social_login_pro_module_name'));
-        
     	return $this->EE->load->view('settings', $vars, TRUE);
         
     }
@@ -361,8 +368,6 @@ class Social_login_pro_mcp {
                 'enable_template'	=> form_checkbox("enable[$tmpl]", 'y', ($enable_template=='y')?true:false).' '.lang('enable_template')
         		);
         }
-        
-        $this->EE->cp->set_variable('cp_page_title', lang('social_login_pro_module_name'));
         
     	return $this->EE->load->view('templates', $vars, TRUE);
 	
