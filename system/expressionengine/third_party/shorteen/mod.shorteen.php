@@ -228,16 +228,16 @@ class Shorteen {
         switch ($service)
         {
             case 'googl':
-                $shorturl = $rawdata->id;
+                $shorturl = trim($rawdata->id);
                 break;
             case 'cloud-app':
                 if (isset($rawdata))
                 {
-                    $shorturl = $rawdata->url;
+                    $shorturl = trim($rawdata->url);
                 }
                 break;
             default:
-                $shorturl = $response;
+                $shorturl = trim($response);
                 break;
         }
 

@@ -1,14 +1,14 @@
 <?php if (!defined('BASEPATH')) exit('No direct script access allowed');
 
-error_reporting(0);
+//error_reporting(0);
 
-class facebook_oauth
+class weibo_oauth
 {
     const SCHEME = 'https';
-    const HOST = 'graph.facebook.com';
-    const AUTHORIZE_URI = '/oauth/authorize';
-    const REQUEST_URI   = '/oauth/request_token';
-    const ACCESS_URI    = '/oauth/access_token';
+    const HOST = 'api.weibo.com';
+    const AUTHORIZE_URI = '/oauth2/authorize';
+    const REQUEST_URI   = '/oauth2/request_token';
+    const ACCESS_URI    = '/oauth2/access_token';
     const USERINFO_URI    = '/me';
     
     //Array that should contain the consumer secret and
@@ -23,7 +23,7 @@ class facebook_oauth
      *
      * @param array $params
      */
-    public function facebook_oauth($params)
+    public function weibo_oauth($params)
     {
         $this->CI = get_instance();
         $this->CI->load->helper('oauth');
@@ -34,20 +34,27 @@ class facebook_oauth
         $this->_consumer = $params;
     }
     
-    /**
-     * This is called to begin the oauth token exchange. This should only
-     * need to be called once for a user, provided they allow oauth access.
-     * It will return a URL that your site should redirect to, allowing the
-     * user to login and accept your application.
-     *
-     * @param string $callback the page on your site you wish to return to
-     *                         after the user grants your application access.
-     * @return mixed either the URL to redirect to, or if they specified HMAC
-     *         signing an array with the token_secret and the redirect url
-     */
+
     public function get_request_token($callback, $will_post=true, $session_id=false, $is_popup=false)
     {
-        /*$baseurl = self::SCHEME.'://'.self::HOST.self::AUTHORIZE_URI;
+
+        //$state = md5(uniqid(rand(), true));
+		//get_instance()->session->set_userdata('state', $state);
+		$params = array(
+			'client_id' 		=> $this->_consumer['key'],
+			'redirect_uri' 	=> $callback,
+			//'state' 		=> $state,
+			//'scope'				=> is_array($this->scope) ? implode($this->scope_seperator, $this->scope) : $this->scope,
+			'response_type' 	=> 'code',
+			'approval_prompt'   => 'force' // - google force-recheck
+		);
+
+		$params = array_merge($params, $this->_consumer);
+
+		header("Location: https://api.weibo.com/oauth2/authorize?".http_build_query($params));
+        exit();
+        
+        $baseurl = "http://api.t.sina.com.cn/oauth/request_token";
 
         //Generate an array with the initial oauth values we need
         $auth = build_auth_array($baseurl, $this->_consumer['key'], $this->_consumer['secret'],
@@ -55,27 +62,39 @@ class facebook_oauth
                                  $this->_consumer['method'], $this->_consumer['algorithm']);
         //Create the "Authorization" portion of the header
         $str = "";
+        $fields_string = '';
         foreach($auth as $key => $value)
+        {
             $str .= ",{$key}=\"{$value}\"";
+            $fields_string .= $key.'='.$value.'&';
+        }
         $str = 'Authorization: OAuth '.substr($str, 1);
+        $fields_string .= '&consumer_secret='.$this->_consumer['secret'];      
+
         //Send it
-        $response = $this->_connect($baseurl, $str);
-        //We should get back a request token and secret which
-        //we will add to the redirect url.
-        parse_str($response, $resarray);*/
-        //Return the full redirect url and let the user decide what to do from there.
-        $scope = "email,user_about_me,user_status";
-        if ($will_post==true) $scope .= ",publish_stream,offline_access";
-        $display = ($is_popup==true)?'popup':'page';
-        $redirect = "https://www.facebook.com/dialog/oauth?response_type=code&scope=$scope&display=$display&client_id=".$this->_consumer['key']."&redirect_uri=".urlencode($callback);
+        $ch = curl_init($baseurl);
+        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
+        curl_setopt($ch, CURLOPT_SSLVERSION,3);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array($str));
+        
+        curl_setopt($ch,CURLOPT_POST,true);
+        curl_setopt($ch,CURLOPT_POSTFIELDS,$fields_string);
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        var_dump($response);
+        exit();
+        $redirect = self::SCHEME.'://'.self::HOST.self::AUTHORIZE_URI."?response_type=code&client_id=".$this->_consumer['key']."&redirect_uri=".$callback;
 
         //$response = $this->_connect($redirect, '');
         //var_dump($response);
         header("Location: $redirect");
         exit();
-        //If they are using HMAC then we need to return the token secret for them to store.
-        /*if($this->_consumer['algorithm'] == OAUTH_ALGORITHMS::RSA_SHA1)return $redirect;
-        else return array('token_secret'=>$resarray['oauth_token_secret'], 'redirect'=>$redirect);*/
+
     }
     
     /**
@@ -93,7 +112,7 @@ class facebook_oauth
   
         if($secret !== false)$tokenddata['oauth_token_secret'] = urlencode($secret);
 
-        $baseurl = "https://graph.facebook.com/oauth/access_token?client_id=".$this->_consumer['key']."&redirect_uri=".urlencode($callback)."&client_secret=".$this->_consumer['secret']."&code=$secret";
+        $baseurl = self::SCHEME.'://'.self::HOST.self::ACCESS_URI."?client_id=".$this->_consumer['key']."&redirect_uri=".urlencode($callback)."&client_secret=".$this->_consumer['secret']."&grant_type=authorization_code&code=$secret";
 
         $response = $this->_connect($baseurl, '');
 
@@ -119,29 +138,8 @@ class facebook_oauth
             parse_str($response, $oauth);        
         }   
         
-        //let's do a check!
-        $baseurl = "https://graph.facebook.com/app/?access_token=".$oauth['access_token'];
-
-        $response = $this->_connect($baseurl, '');
-        
-        if (function_exists('json_decode'))
-        {
-            $check = json_decode($response);
-        }
-        else
-        {
-            require_once(PATH_THIRD.'social_login_pro/libraries/inc/JSON.php');
-            $json = new Services_JSON();
-            $check = $json->decode($response);
-        }  
-        
-        //var_dump($check);
-        
-        if ($check->id!=$this->_consumer['key'])
-        {
-            $oauth['oauth_problem'] = 'Could not verify your login data.';
-        }
-        
+        var_dump($response);
+        exit();
 
         //Return the token and secret for storage
         return $oauth;
@@ -192,7 +190,7 @@ class facebook_oauth
         $data['screen_name'] = $rawdata->name;
         $data['bio'] = $rawdata->bio;
         $data['occupation'] = '';
-        $data['email'] = (isset($rawdata->email))?$rawdata->email:'';
+        $data['email'] = $rawdata->email;
         $data['location'] = $rawdata->location->name;
         $fb_url = (isset($rawdata->username))?'http://www.facebook.com/'.$rawdata->username:'http://www.facebook.com/profile.php?id='.$rawdata->id;
         $data['url'] = ($rawdata->link!='')?$rawdata->link:$fb_url;

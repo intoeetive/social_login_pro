@@ -33,7 +33,7 @@ class Social_login_pro {
     
     var $ee_version = '2.0';
     
-    var $providers = array('twitter', 'facebook', 'linkedin', 'yahoo', 'google', 'vkontakte', 'instagram', 'appdotnet', 'windows');
+    var $providers = array('twitter', 'facebook', 'linkedin', 'yahoo', 'google', 'vkontakte', 'instagram', 'appdotnet', 'windows');//, 'weibo');
     
     var $social_login = array();
 
@@ -45,6 +45,7 @@ class Social_login_pro {
     {        
     	$this->EE =& get_instance(); 
         $this->EE->lang->loadfile('login');
+        $this->EE->lang->loadfile('member');
         $this->EE->lang->loadfile('social_login_pro');
         $query = $this->EE->db->query("SELECT settings FROM exp_modules WHERE module_name='Social_login_pro' LIMIT 1");
         if ($query->num_rows()>0) $this->settings = unserialize($query->row('settings')); 
@@ -105,12 +106,40 @@ class Social_login_pro {
             $data['hidden_fields']['no_email_return'] = $this->EE->functions->create_url($this->EE->TMPL->fetch_param('no_email_return'));
         }
         
+        
+        if ($this->EE->TMPL->fetch_param('new_member_return')!='')
+        {
+            if ($this->EE->TMPL->fetch_param('new_member_return')=='SAME_PAGE')
+            {
+                $data['hidden_fields']['new_member_return'] = $this->EE->functions->fetch_current_uri();
+            }
+            else if (strpos($this->EE->TMPL->fetch_param('new_member_return'), "http://")!==FALSE || strpos($this->EE->TMPL->fetch_param('new_member_return'), "https://")!==FALSE)
+            {
+                $data['hidden_fields']['new_member_return'] = $this->EE->TMPL->fetch_param('new_member_return');
+            }
+            else
+            {
+                $data['hidden_fields']['new_member_return'] = $this->EE->functions->create_url($this->EE->TMPL->fetch_param('new_member_return'));
+            }
+        }
+        
+        
+        
+        
         $providers_list = ($this->EE->TMPL->fetch_param('providers')!='') ? explode('|', $this->EE->TMPL->fetch_param('providers')) : array();
         
         $tagdata = $this->EE->TMPL->tagdata;
         
         $icon_set = ($this->EE->TMPL->fetch_param('icon_set')!='') ? $this->EE->TMPL->fetch_param('icon_set') : $this->settings[$site_id]['icon_set'];
-        if (!is_dir($this->EE->config->slash_item('theme_folder_path').'third_party/social_login/'.$icon_set))
+        if ($this->EE->config->item('path_third_themes')!='')
+        {
+            $theme_folder_path = $this->EE->config->slash_item('path_third_themes').'social_login/';
+        }
+        else
+        {
+            $theme_folder_path = $this->EE->config->slash_item('theme_folder_path').'third_party/social_login/';
+        }
+        if (!is_dir($theme_folder_path.$icon_set))
         {
             $icon_set = $this->settings[$site_id]['icon_set'];
         }
@@ -129,6 +158,15 @@ class Social_login_pro {
 
             $out = '';
             $chunk = $matches[3][0];
+            
+            if ($this->EE->config->item('url_third_themes')!='')
+            {
+                $theme_folder_url = $this->EE->config->slash_item('url_third_themes').'social_login/';
+            }
+            else
+            {
+                $theme_folder_url = $this->EE->config->slash_item('theme_folder_url').'third_party/social_login/';
+            }
 
             foreach ($providers as $provider)
             {
@@ -138,7 +176,7 @@ class Social_login_pro {
                     $parsed_chunk = $chunk;
                     $parsed_chunk = $this->EE->TMPL->swap_var_single('provider_name', $provider, $parsed_chunk);
                     $parsed_chunk = $this->EE->TMPL->swap_var_single('provider_title', lang($provider), $parsed_chunk);
-                    $parsed_chunk = $this->EE->TMPL->swap_var_single('provider_icon', $this->EE->config->slash_item('theme_folder_url').'third_party/social_login/'.$icon_set.'/'.$provider.'.png', $parsed_chunk);
+                    $parsed_chunk = $this->EE->TMPL->swap_var_single('provider_icon', $theme_folder_url.$icon_set.'/'.$provider.'.png', $parsed_chunk);
                     if ($this->EE->session->userdata('member_id')==0)
                     {
                         $out .= $parsed_chunk;
@@ -222,16 +260,12 @@ myForm.onsubmit = function() {
         $this->social_login['auto_login'] = $this->EE->input->get_post('auto_login');
         $this->social_login['return'] = ($this->EE->input->get_post('RET')!='')?$this->EE->input->get_post('RET'):$this->EE->functions->fetch_site_index();
         $this->social_login['no_email_return'] = ($this->EE->input->get_post('no_email_return')!='')?$this->EE->input->get_post('no_email_return'):$this->social_login['return'];
+        $this->social_login['new_member_return'] = ($this->EE->input->get_post('new_member_return')!='')?$this->EE->input->get_post('new_member_return'):$this->social_login['return'];
 		$this->social_login['anon'] = $this->EE->input->get_post('anon');
         $this->social_login['group_id'] = $this->EE->input->get_post('group_id');
         $this->social_login['is_popup'] = $is_popup;
         
         $this->_save_session_data($this->social_login, $session_id);
-        
-        $params = array('key'=>$this->settings[$site_id]["$provider"]['app_id'], 'secret'=>$this->settings[$site_id]["$provider"]['app_secret']);
-
-        $lib = $provider.'_oauth';
-        $this->EE->load->library($lib, $params);
         
         if ($this->EE->session->userdata['member_id']!=0)
         {
@@ -250,6 +284,38 @@ myForm.onsubmit = function() {
         {
             $will_post = true;
         }
+        
+        if ($provider=='facebook')
+        {
+            require_once PATH_THIRD.'social_login_pro/facebook-sdk/facebook.php';
+            
+            $fb_config = array();
+            $fb_config['appId'] = $this->settings[$site_id]["$provider"]['app_id'];
+            $fb_config['secret'] = $this->settings[$site_id]["$provider"]['app_secret'];
+            
+            $facebook = new Facebook($fb_config);
+            
+            $scope = "email,user_about_me,user_status";
+            if ($will_post==true) $scope .= ",publish_stream,offline_access";
+            
+            $params = array(
+              'scope' => $scope,
+              'redirect_uri' => $access_token_url
+            );
+            
+            $loginUrl = $facebook->getLoginUrl($params);
+            
+            header("Location: $loginUrl");
+            exit();
+            
+        }
+        
+        $params = array('key'=>$this->settings[$site_id]["$provider"]['app_id'], 'secret'=>$this->settings[$site_id]["$provider"]['app_secret']);
+
+        $lib = $provider.'_oauth';
+        $this->EE->load->library($lib, $params);
+        
+        
         $response = $this->EE->$lib->get_request_token($access_token_url, $will_post, false, $is_popup);
         
         $this->social_login['token_secret'] = $response['token_secret'];
@@ -294,32 +360,50 @@ myForm.onsubmit = function() {
 
         $lib = $provider.'_oauth';
         $params = array('key'=>$this->settings[$site_id]["$provider"]['app_id'], 'secret'=>$this->settings[$site_id]["$provider"]['app_secret']);
-                
+        
         $this->EE->load->library($lib, $params);
-        if (in_array($provider, array('facebook', 'vkontakte', 'instagram', 'appdotnet', 'windows')))
+        
+        if ($provider=='facebook')
         {
-            $act = $this->EE->db->query("SELECT action_id FROM exp_actions WHERE class='Social_login_pro' AND method='access_token'");
-            $access_token_url = trim($this->EE->config->item('site_url'), '/').'/?ACT='.$act->row('action_id').'&sid='.$session_id;
-            $response = $this->EE->$lib->get_access_token($access_token_url, $this->EE->input->get('code'));
-            $this->social_login['oauth_token'] = $response['access_token'];
+            require_once PATH_THIRD.'social_login_pro/facebook-sdk/facebook.php';
+            
+            $fb_config = array();
+            $fb_config['appId'] = $this->settings[$site_id]["$provider"]['app_id'];
+            $fb_config['secret'] = $this->settings[$site_id]["$provider"]['app_secret'];
+            
+            $facebook = new Facebook($fb_config);
+            
+            $response = array();
+            $response['access_token'] = $this->social_login['oauth_token'] = $facebook->getAccessToken();
+            
         }
         else
         {
-            $response = $this->EE->$lib->get_access_token(false, $this->social_login['token_secret']);
-            $this->social_login['oauth_token'] = $response['oauth_token'];
-            $this->social_login['oauth_token_secret'] = $response['oauth_token_secret'];
-        }
-        if ($provider=='yahoo')
-        {
-            $this->social_login['guid'] = $response['xoauth_yahoo_guid'];
-        }
-
-        if ($response==NULL || (isset($response['oauth_problem']) && $response['oauth_problem']!=''))
-        {
-            //$this->EE->output->show_user_error('general', array($this->EE->lang->line('oauth_problem').$this->EE->lang->line($provider).'. '.$this->EE->lang->line('try_again')));
-            $return = $this->social_login['return'];
-            $this->_clear_session_data($session_id);
-            return $this->EE->functions->redirect($return);
+            if (in_array($provider, array('vkontakte', 'instagram', 'appdotnet', 'windows')))
+            {
+                $act = $this->EE->db->query("SELECT action_id FROM exp_actions WHERE class='Social_login_pro' AND method='access_token'");
+                $access_token_url = trim($this->EE->config->item('site_url'), '/').'/?ACT='.$act->row('action_id').'&sid='.$session_id;
+                $response = $this->EE->$lib->get_access_token($access_token_url, $this->EE->input->get('code'));
+                $this->social_login['oauth_token'] = $response['access_token'];
+            }
+            else
+            {
+                $response = $this->EE->$lib->get_access_token(false, $this->social_login['token_secret']);
+                $this->social_login['oauth_token'] = $response['oauth_token'];
+                $this->social_login['oauth_token_secret'] = $response['oauth_token_secret'];
+            }
+            if ($provider=='yahoo')
+            {
+                $this->social_login['guid'] = $response['xoauth_yahoo_guid'];
+            }
+    
+            if ($response==NULL || (isset($response['oauth_problem']) && $response['oauth_problem']!=''))
+            {
+                //$this->EE->output->show_user_error('general', array($this->EE->lang->line('oauth_problem').$this->EE->lang->line($provider).'. '.$this->EE->lang->line('try_again')));
+                $return = $this->social_login['return'];
+                $this->_clear_session_data($session_id);
+                return $this->EE->functions->redirect($return);
+            }
         }
         
         $this->_save_session_data($this->social_login, $session_id);
@@ -407,6 +491,12 @@ myForm.onsubmit = function() {
                 return $this->_login_by_id($query->row('member_id'), FALSE, $temp_password);
             }
         }
+        
+        if ( $this->EE->config->item('allow_member_registration') != 'y' )
+		{
+			$this->_show_error('general', lang('mbr_registration_not_allowed'), $is_popup);
+            return;
+		}
                 
         $data['username']	= $userdata['username'];
         
@@ -608,6 +698,15 @@ myForm.onsubmit = function() {
 		}
         
         $this->EE->stats->update_member_stats();
+        
+        //new members can be redirected to different URL
+        if ($this->social_login['new_member_return']!=$this->social_login['return'])
+        {
+            $this->social_login['no_email_return']=$this->social_login['new_member_return'];
+        }
+        $this->social_login['return'] = $this->social_login['new_member_return'];
+        $this->_save_session_data($this->social_login, $session_id);
+
 
         // -------------------------------------------
 		// 'member_member_register' hook.
@@ -824,12 +923,22 @@ window.close();
         {
             $icon_set = $this->settings[$site_id]['icon_set'];
         }
+        
+        if ($this->EE->config->item('url_third_themes')!='')
+        {
+            $theme_folder_url = $this->EE->config->slash_item('url_third_themes').'social_login/';
+        }
+        else
+        {
+            $theme_folder_url = $this->EE->config->slash_item('theme_folder_url').'third_party/social_login/';
+        }
+                                
         foreach ($keys as $provider_name=>$provider_data)
         {
         	$variables_row = array();
 			$variables_row['provider_name'] = $provider_name;
         	$variables_row['provider_title'] = lang($provider_name);
-        	$variables_row['provider_icon'] = $this->EE->config->slash_item('theme_folder_url').'third_party/social_login/'.$icon_set.'/'.$provider_name.'.png';
+        	$variables_row['provider_icon'] = $theme_folder_url.$icon_set.'/'.$provider_name.'.png';
         	$variables_row['oauth_token'] = $provider_data['oauth_token'];
         	$variables_row['oauth_token_secret'] = $provider_data['oauth_token_secret'];
         	if ($provider_name=='yahoo')
@@ -1153,6 +1262,8 @@ window.close();
 
 		$expire = ($this->social_login['auto_login']==1) ? 60*60*24*365 : 0;
         
+        
+        
 		if ( $multi == FALSE )
 		{
 			$this->EE->db->select('member_id, unique_id, group_id, email')
@@ -1388,6 +1499,7 @@ window.close();
         
         // success!!
         $return = $this->social_login['return'];
+
         $this->_clear_session_data($session_id);
 			
         if ($is_popup==false)
@@ -1526,6 +1638,8 @@ window.close();
             return;
 		}	
         
+        if ($this->EE->config->item('app_version')<270)
+        {
         if ($this->EE->config->item('secure_forms') == 'y')
 		{
 			$this->EE->db->select('COUNT(*) as count');
@@ -1540,6 +1654,7 @@ window.close();
                 return;
 			}	
 		}
+        }
         $site_id = $this->EE->config->item('site_id');
         $permissions[$site_id] = array(
             'entry_submit' => 'y',
@@ -1556,6 +1671,8 @@ window.close();
         $this->EE->db->where('member_id', $this->EE->session->userdata('member_id'));
         $this->EE->db->update('members', $upd_data);
         
+        if ($this->EE->config->item('app_version')<270)
+        {
         if ($this->EE->config->item('secure_forms') == 'y')
 		{
 			$this->EE->db->where('hash', $this->EE->input->post('XID'));
@@ -1563,6 +1680,7 @@ window.close();
 			$this->EE->db->or_where('date', 'UNIX_TIMESTAMP()-7200');
 			$this->EE->db->delete('security_hashes');				
 		}
+        }
         
         $data = array(	'title' 	=> $this->EE->lang->line('thank_you'),
 						'heading'	=> $this->EE->lang->line('thank_you'),

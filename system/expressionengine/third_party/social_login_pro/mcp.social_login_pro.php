@@ -136,9 +136,18 @@ class Social_login_pro_mcp {
         $vars = array();
         $vars['providers'] = $providers_view;
         
+        if ($this->EE->config->item('path_third_themes')!='')
+        {
+            $theme_folder_path = $this->EE->config->slash_item('path_third_themes').'social_login/';
+        }
+        else
+        {
+            $theme_folder_path = $this->EE->config->slash_item('theme_folder_path').'third_party/social_login/';
+        }
+        
         $icon_sets = array();
-        foreach(scandir(PATH_THEMES.'third_party/social_login/') as $dir) {
-            if (substr($dir, 0, 1)!='.' && is_dir(PATH_THEMES.'third_party/social_login/'.$dir)) 
+        foreach(scandir($theme_folder_path) as $dir) {
+            if (substr($dir, 0, 1)!='.' && is_dir($theme_folder_path.$dir)) 
             {
                 $icon_sets[$dir] = $dir;
             }

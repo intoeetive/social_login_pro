@@ -194,7 +194,7 @@ class twitter_oauth
     
     function start_following($username='', $response = array())
     {
-        $baseurl = "http://api.twitter.com/1.1/friendships/create.json"; 
+        $baseurl = "https://api.twitter.com/1.1/friendships/create.json"; 
         if (strpos($username, '@')===0) $username = substr($username, 1);
         $fields = array(
             'screen_name'=>urlencode($username)
@@ -229,7 +229,7 @@ class twitter_oauth
 
     function post($message, $url, $oauth_token='', $oauth_token_secret='')
     {
-        $baseurl = "http://api.twitter.com/1.1/statuses/update.json"; 
+        $baseurl = "https://api.twitter.com/1.1/statuses/update.json"; 
         $fields = array(
             'status'=>urlencode($message)
         );

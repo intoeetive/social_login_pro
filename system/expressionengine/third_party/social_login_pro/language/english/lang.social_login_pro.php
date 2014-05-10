@@ -306,8 +306,42 @@ $lang = array(
 "NOT SUPPORTED - available only for stand-alone apps",
 
 
+
+"weibo" =>
+"Sina Weibo",
+
+"weibo_app_id" =>
+"App Key",
+
+"weibo_app_id_subtext" =>
+"required, if you want to use Sina Weibo",
+
+"weibo_app_secret" =>
+"App Secret",
+
+"weibo_app_secret_subtext" =>
+"required, if you want to use Sina Weibo",
+
+"weibo_custom_field" =>
+"Custom profile field holding Sina Weibo username",
+
+"weibo_custom_field_subtext" =>
+"required, if you want to use Weibo",
+
+"weibo_app_register_url" =>
+"http://open.weibo.com/apps/new?sort=web",
+
+"weibo_enable_posts" =>
+"Share text updates from user's account about his activity",
+
+"weibo_enable_posts_subtext" =>
+"NOT SUPPORTED",
+
+
+
+
 "windows" =>
-"Windows account",
+"Windows Live account",
 
 "windows_app_id" =>
 "Client ID",
