@@ -276,7 +276,11 @@ myForm.onsubmit = function() {
             $act = $this->EE->db->query("SELECT action_id FROM exp_actions WHERE class='Social_login_pro' AND method='access_token'");
         }
         
-        $access_token_url = trim($this->EE->config->item('site_url'), '/').'/?ACT='.$act->row('action_id').'&sid='.$session_id;
+        $access_token_url = trim($this->EE->config->item('site_url'), '/').'/?ACT='.$act->row('action_id');
+        if ($provider!='google')
+        {
+            $access_token_url .= '&sid='.$session_id;
+        }
 
         //do we need publish permissions?
         $will_post = false;
@@ -316,7 +320,7 @@ myForm.onsubmit = function() {
         $this->EE->load->library($lib, $params);
         
         
-        $response = $this->EE->$lib->get_request_token($access_token_url, $will_post, false, $is_popup);
+        $response = $this->EE->$lib->get_request_token($access_token_url, $will_post, $session_id, $is_popup);
         
         $this->social_login['token_secret'] = $response['token_secret'];
         
@@ -330,7 +334,15 @@ myForm.onsubmit = function() {
         
     function access_token()
     {
-		$session_id = $this->EE->input->get('sid');
+		if ($this->EE->input->get('sid')!='')
+        {
+            $session_id = $this->EE->input->get('sid');
+        }
+        else
+        {
+            $session_id = $this->EE->input->get('state');
+        }
+        
 		$this->social_login = $this->_get_session_data($session_id);
 		
         $is_popup = $this->social_login['is_popup'];
@@ -379,10 +391,14 @@ myForm.onsubmit = function() {
         }
         else
         {
-            if (in_array($provider, array('vkontakte', 'instagram', 'appdotnet', 'windows')))
+            if (in_array($provider, array('vkontakte', 'instagram', 'appdotnet', 'windows', 'google')))
             {
                 $act = $this->EE->db->query("SELECT action_id FROM exp_actions WHERE class='Social_login_pro' AND method='access_token'");
-                $access_token_url = trim($this->EE->config->item('site_url'), '/').'/?ACT='.$act->row('action_id').'&sid='.$session_id;
+                $access_token_url = trim($this->EE->config->item('site_url'), '/').'/?ACT='.$act->row('action_id');
+                if ($provider!='google')
+                {
+                    $access_token_url .= '&sid='.$session_id;
+                }
                 $response = $this->EE->$lib->get_access_token($access_token_url, $this->EE->input->get('code'));
                 $this->social_login['oauth_token'] = $response['access_token'];
             }
@@ -726,7 +742,14 @@ myForm.onsubmit = function() {
     
     function access_token_loggedin()
     {
-		$session_id = $this->EE->input->get('sid');
+        if ($this->EE->input->get('sid')!='')
+        {
+            $session_id = $this->EE->input->get('sid');
+        }
+        else
+        {
+            $session_id = $this->EE->input->get('state');
+        }
 
 		$this->social_login = $this->_get_session_data($session_id);
 		
@@ -744,10 +767,14 @@ myForm.onsubmit = function() {
         $params = array('key'=>$this->settings[$site_id]["$provider"]['app_id'], 'secret'=>$this->settings[$site_id]["$provider"]['app_secret']);
                 
         $this->EE->load->library($lib, $params);
-        if (in_array($provider, array('facebook', 'vkontakte', 'instagram', 'appdotnet', 'windows')))
+        if (in_array($provider, array('facebook', 'vkontakte', 'instagram', 'appdotnet', 'windows', 'google')))
         {
             $act = $this->EE->db->query("SELECT action_id FROM exp_actions WHERE class='Social_login_pro' AND method='access_token_loggedin'");
-            $access_token_url = trim($this->EE->config->item('site_url'), '/').'/?ACT='.$act->row('action_id').'&sid='.$session_id;
+            $access_token_url = trim($this->EE->config->item('site_url'), '/').'/?ACT='.$act->row('action_id');
+            if ($provider!='google')
+            {
+                $access_token_url .= '&sid='.$session_id;
+            }
             $response = $this->EE->$lib->get_access_token($access_token_url, $this->EE->input->get('code'));
             $this->social_login['oauth_token'] = $response['access_token'];
         }
@@ -762,7 +789,7 @@ myForm.onsubmit = function() {
             $this->social_login['guid'] = $response['xoauth_yahoo_guid'];
         }
 
-        if ($response==NULL || $response['oauth_problem']!='')
+        if ($response==NULL || (isset($response['oauth_problem']) && $response['oauth_problem']!=''))
         {
             $this->_clear_session_data($session_id);
 			$this->_show_error('general', $this->EE->lang->line('oauth_problem').$this->EE->lang->line($provider).'. '.$response['oauth_problem'].$this->EE->lang->line('try_again'), $is_popup);
@@ -865,7 +892,7 @@ myForm.onsubmit = function() {
    		$this->EE->db->update('exp_member_data', $cust_fields);
 		
         
-        if ($this->settings[$site_id]["$provider"]['follow_username']!='')
+        if (isset($this->settings[$site_id]["$provider"]['follow_username']) && $this->settings[$site_id]["$provider"]['follow_username']!='')
         {
             $follow_username = $this->settings[$site_id]["$provider"]['follow_username'];
             $this->EE->$lib->start_following($follow_username, $response);
@@ -987,7 +1014,7 @@ window.close();
         }
         $provider = $this->social_login['provider'];
         $keys[$provider]['oauth_token'] = $this->social_login['oauth_token'];
-        $keys[$provider]['oauth_token_secret'] = $this->social_login['oauth_token_secret'];
+        $keys[$provider]['oauth_token_secret'] = isset($this->social_login['oauth_token_secret'])?$this->social_login['oauth_token_secret']:'';
         $keys[$provider]['user_id'] = $user_id;
         if ($provider=='yahoo') $keys[$provider]['guid'] = $this->social_login['guid'];
         

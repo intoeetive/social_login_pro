@@ -34,13 +34,14 @@ class Social_login_pro_ext {
     
     var $settings 		= array();
     var $max_link_length = 25;
-    var $providers = array('twitter', 'facebook', 'linkedin', 'yahoo', 'appdotnet');
+    var $providers = array('twitter', 'facebook', 'linkedin', 'yahoo', 'appdotnet', 'google');
     var $maxlen 		= array(
                                 'twitter'   => 140,
                                 'yahoo'     => 140,
                                 'facebook'  => 420,
                                 'linkedin'  => 700,
-                                'appdotnet' => 210
+                                'appdotnet' => 210,
+                                'google'    => 700
                             );
     
 	/**

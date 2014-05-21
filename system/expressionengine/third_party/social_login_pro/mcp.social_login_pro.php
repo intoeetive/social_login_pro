@@ -113,7 +113,7 @@ class Social_login_pro_mcp {
                         'field'=>form_dropdown("custom_field[$provider]", $custom_fields, (isset($this->settings[$this->EE->config->item('site_id')][$provider]['custom_field'])?$this->settings[$this->EE->config->item('site_id')][$provider]['custom_field']:''))
                     )
             );
-            if (in_array($provider, array('twitter', 'facebook', 'linkedin', 'yahoo', 'appdotnet')))
+            if (in_array($provider, array('twitter', 'facebook', 'linkedin', 'yahoo', 'appdotnet', 'google')))
             {
                 $data['fields'][3] = array(
                         'label'=>lang($provider.'_enable_posts'),
@@ -159,6 +159,10 @@ class Social_login_pro_mcp {
         $act = $this->EE->db->query("SELECT action_id FROM exp_actions WHERE class='Social_login_pro' AND method='access_token'");
         $access_token_url = trim($this->EE->config->item('site_url'), '/').'/?ACT='.$act->row('action_id');
         $vars['settings']['callback_uri']	= $access_token_url;
+        
+        $act = $this->EE->db->query("SELECT action_id FROM exp_actions WHERE class='Social_login_pro' AND method='access_token_loggedin'");
+        $access_token_url = trim($this->EE->config->item('site_url'), '/').'/?ACT='.$act->row('action_id');
+        $vars['settings']['callback_uri_loggedin']	= $access_token_url;
         
         $vars['settings']['prevent_duplicate_assoc'] = form_checkbox('prevent_duplicate_assoc', 'y', (isset($this->settings[$this->EE->config->item('site_id')]['prevent_duplicate_assoc'])?$this->settings[$this->EE->config->item('site_id')]['prevent_duplicate_assoc']:false));
         

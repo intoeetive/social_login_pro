@@ -240,7 +240,7 @@ $lang = array(
 "https://www.google.com/accounts/ManageDomains",
 
 "google_enable_posts" =>
-"Send status updates to user's circles - NOT SUPPORTED YET",
+"Send status updates to user's circles (unsupported yet but coming soon)",
 
 "google_enable_posts_subtext" =>
 "Enable authomatic posts to Google+?",
@@ -405,6 +405,9 @@ $lang = array(
 
 "callback_uri" =>
 "Callback URI",
+
+"callback_uri_loggedin" =>
+"Callback URI for logged in users",
 
 "unauthorized_access" =>
 "You are not authorized to access this page",

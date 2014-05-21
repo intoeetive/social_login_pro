@@ -2,68 +2,22 @@
 
 error_reporting(0);
 
-/*
-Based on script copyright (C) 2011 by Jim Saunders
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
-
-
-/**
- * This library is meant to get you an oauth access token
- * for a google service. You can define which service by
- * changing the SCOPE constant. You will need to pass in
- * your consumer key and secret upon loading this library.
- *
- * I would like to note that the HMAC-SHA1 hashes google
- * generates seem to be different from those that are correctly
- * generated it could be I was signing my requests wrong (I did
- * make some corrections to how that works on the helper) or its
- * possible that google is doing it wrong (I read a number of
- * posts about people seeking help who were told to use RSA).
- * Either way I can say that I have used the RSA-SHA1 signing
- * method with out any issues and I would recommend you use that.
- */
 class google_oauth
 {
     const SCHEME = 'https';
-    const HOST = 'www.google.com';
+    const HOST = 'accounts.google.com';
     const AUTHORIZE_URI = '/accounts/OAuthAuthorizeToken';
-    const REQUEST_URI   = '/accounts/OAuthGetRequestToken';
-    const ACCESS_URI    = '/accounts/OAuthGetAccessToken';
+    const REQUEST_URI   = '/o/oauth2/auth';
+    const ACCESS_URI    = '/o/oauth2/token';
 
     //This should be changed to correspond with the
     //google service you are authenticating against.
-    const SCOPE         = 'https://www.google.com/m8/feeds/ https://www-opensocial.googleusercontent.com/api/people/'; //Portable Contacts
+    const SCOPE         = 'https://www.googleapis.com/auth/plus.login email'; 
 
     //Array that should contain the consumer secret and
     //key which should be passed into the constructor.
     private $_consumer = false;
 
-    /**
-     * Pass in a parameters array which should look as follows:
-     * array('key'=>'example.com', 'secret'=>'mysecret');
-     * Note that the secret should either be a hash string for
-     * HMAC signatures or a file path string for RSA signatures.
-     *
-     * @param array $params
-     */
     public function google_oauth($params)
     {
         $this->CI = get_instance();
@@ -75,88 +29,52 @@ class google_oauth
         $this->_consumer = $params;
     }
 
-    /**
-     * This is called to begin the oauth token exchange. This should only
-     * need to be called once for a user, provided they allow oauth access.
-     * It will return a URL that your site should redirect to, allowing the
-     * user to login and accept your application.
-     *
-     * @param string $callback the page on your site you wish to return to
-     *                         after the user grants your application access.
-     * @return mixed either the URL to redirect to, or if they specified HMAC
-     *         signing an array with the token_secret and the redirect url
-     */
+
     public function get_request_token($callback, $will_post=true, $session_id=false)
     {
         $baseurl = self::SCHEME.'://'.self::HOST.self::REQUEST_URI;
-        
-        require_once(PATH_THIRD.'social_login_pro/libraries/inc/OAuthSimple.php');
 
-        $oauth_obj = new OAuthSimple();
-        $oauth = $oauth_obj->sign(Array('path'=>$baseurl,
-                        'parameters'=>Array('oauth_callback'=>$callback, 'scope'=>self::SCOPE),
-                        'signatures'=> Array('consumer_key'=>$this->_consumer['key'],
-                                            'shared_secret'=>$this->_consumer['secret']
-                                            )));
-                                          
-        $result = $this->_connect($oauth['signed_url'], array());
+        //if ($will_post==true) $scope .= ",publish_stream,offline_access";
+        $redirect = $baseurl."?response_type=code&scope=".self::SCOPE."&state=$session_id&client_id=".$this->_consumer['key']."&redirect_uri=".urlencode($callback);
 
-        parse_str($result, $resarray);
-        //Return the full redirect url and let the user decide what to do from there.
-        $redirect = self::SCHEME.'://'.self::HOST.self::AUTHORIZE_URI."?oauth_token=".$resarray['oauth_token'];
-        //If they are using HMAC then we need to return the token secret for them to store.
-        if($this->_consumer['algorithm'] == OAUTH_ALGORITHMS::RSA_SHA1)return $redirect;
-        else return array('token_secret'=>$resarray['oauth_token_secret'], 'redirect'=>$redirect);
+        header("Location: $redirect");
+        exit();
     }
 
-    /**
-     * This is called to finish the oauth token exchange. This too should
-     * only need to be called once for a user. The token returned should
-     * be stored in your database for that particular user.
-     *
-     * @param string $token this is the oauth_token returned with your callback url
-     * @param string $secret this is the token secret supplied from the request (Only required if using HMAC)
-     * @param string $verifier this is the oauth_verifier returned with your callback url
-     * @return array access token and token secret
-     */
-    public function get_access_token($token = false, $secret = false, $verifier = false)
+
+    public function get_access_token($callback = false, $secret = false)
     {
-        //If no request token was specified then attempt to get one from the url
-        if($token === false && isset($_GET['oauth_token']))$token = $_GET['oauth_token'];
-        if($verifier === false && isset($_GET['oauth_verifier']))$verifier = $_GET['oauth_verifier'];
-        //If all else fails attempt to get it from the request uri.
-        if($token === false && $verifier === false)
-        {
-            $uri = $_SERVER['REQUEST_URI'];
-            $uriparts = explode('?', $uri);
-
-            $authfields = array();
-            parse_str($uriparts[1], $authfields);
-            $token = $authfields['oauth_token'];
-            $verifier = $authfields['oauth_verifier'];
-        }
-
-        $tokenddata = array('oauth_token'=>urlencode($token), 'oauth_verifier'=>urlencode($verifier));
+        $baseurl = self::SCHEME.'://'.self::HOST.self::ACCESS_URI;
+        
         if($secret !== false)$tokenddata['oauth_token_secret'] = urlencode($secret);
 
-        $baseurl = self::SCHEME.'://'.self::HOST.self::ACCESS_URI;
-        //Include the token and verifier into the header request.
-        $auth = get_auth_header($baseurl, $this->_consumer['key'], $this->_consumer['secret'],
-                                $tokenddata, $this->_consumer['method'], $this->_consumer['algorithm']);
-        $response = $this->_connect($baseurl, $auth);
+        $data_str = "client_id=".$this->_consumer['key']."&redirect_uri=".urlencode($callback)."&client_secret=".$this->_consumer['secret']."&code=".urlencode($secret)."&grant_type=authorization_code";
+
+        $response = $this->_connect($baseurl, '', $data_str);
+
         //Parse the response into an array it should contain
         //both the access token and the secret key. (You only
         //need the secret key if you use HMAC-SHA1 signatures.)
-        parse_str($response, $oauth);
-        if (strpos($response, 'error')!==false || strpos($response, 'invalid')!==false)
+        if (function_exists('json_decode'))
         {
-            $oauth['oauth_problem'] = $response;
+            $a = json_decode($response);
+        }
+        else
+        {
+            require_once(PATH_THIRD.'social_login_pro/libraries/inc/JSON.php');
+            $json = new Services_JSON();
+            $a = $json->decode($response);
+        }
+        
+        if (strpos($response, 'error')!==false)
+        {
+            $oauth['oauth_problem'] = $a->error;
         } 
         else
         {                            
-            parse_str($response, $oauth);        
+            $oauth['access_token'] = $a->access_token;        
         }   
-        //Ret<strong></strong>
+
         //Return the token and secret for storage
         return $oauth;
     }
@@ -168,7 +86,7 @@ class google_oauth
      * @param <type> $auth
      * @return <type>
      */
-    private function _connect($url, $auth)
+    private function _connect($url, $auth, $data=false)
     {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
@@ -177,6 +95,12 @@ class google_oauth
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array($auth));
+        
+        if ($data!==false)
+        {
+            curl_setopt($ch,CURLOPT_POST,true);
+            curl_setopt($ch,CURLOPT_POSTFIELDS,$data);
+        }
 
         $response = curl_exec($ch);
         curl_close($ch);
@@ -185,69 +109,55 @@ class google_oauth
     
     function get_user_data($response = array())
     {
-        require_once(PATH_THIRD.'social_login_pro/libraries/inc/OAuthSimple.php');
-        
-        $baseurl = 'https://www-opensocial.googleusercontent.com/api/people/@me/@self';
+        $access_token = $response['access_token'];
+        $baseurl = "https://www.googleapis.com/plus/v1/people/me?access_token=".$access_token;
 
-        $oauth_obj = new OAuthSimple();
-        $oauth = $oauth_obj->sign(Array('path'=>$baseurl,
-                        'parameters'=>Array('format'=>'json'),
-                        'signatures'=> Array('consumer_key'=>$this->_consumer['key'],
-                                            'shared_secret'=>$this->_consumer['secret'],
-                                            'access_token'=>$response['oauth_token'],
-                                            'access_secret'=>$response['oauth_token_secret'])));
-                                          
-        $result = $this->_connect($oauth['signed_url'], array());
-        
+        $response = $this->_connect($baseurl, '');
+       
         if (function_exists('json_decode'))
         {
-            $rawdata = json_decode($result);
+            $rawdata = json_decode($response);
         }
         else
         {
             require_once(PATH_THIRD.'social_login_pro/libraries/inc/JSON.php');
             $json = new Services_JSON();
-            $rawdata = $json->decode($result);
-        }
+            $rawdata = $json->decode($response);
+        }               
+        
 
         $data = array();
-        $data['screen_name'] = $rawdata->entry->displayName;
-        $data['location'] = '';
-        $data['url'] = $rawdata->entry->profileUrl;
-        $data['avatar'] = $rawdata->entry->thumbnailUrl;
-        $data['photo'] = '';
+        $data['screen_name'] = $rawdata->displayName;
+        foreach ($rawdata->placesLived as $location)
+        {
+            if ($location->primary==true)
+            {
+                $data['location'] = $location->value;
+                break;
+            }
+        }
         
-        $baseurl = 'https://www.google.com/m8/feeds/contacts/default/full/';
-        $oauth_obj = new OAuthSimple();
-        $oauth = $oauth_obj->sign(Array('path'=>$baseurl,
-                        'parameters'=>Array('format'=>'json'),
-                        'signatures'=> Array('consumer_key'=>$this->_consumer['key'],
-                                            'shared_secret'=>$this->_consumer['secret'],
-                                            'access_token'=>$response['oauth_token'],
-                                            'access_secret'=>$response['oauth_token_secret'])));
-                                          
-        $result = $this->_connect($oauth['signed_url'], array());
+        
+        $data['url'] = $rawdata->url;
+        $data['avatar'] = $rawdata->image->url;
+        $data['photo'] = $rawdata->image->url.'0';
+        $data['email'] = $rawdata->emails[0]->value;
 
-        preg_match_all("/<author>(.*?)<\/author>/s", $result, $author);
-        if (!isset($author[1][0])) return;
-        preg_match_all("/<email>(.*?)<\/email>/s", $author[1][0], $email);
-        if (!isset($author[1][0]) || $email[1][0]=='') return;
-  
-        $username = explode("@", $email[1][0]);
+        $username = explode("@", $data['email']);
         $data['username'] = $username[0];
         if ($data['screen_name']=='') $data['screen_name'] = $data['username'];
-        $data['email'] = $email[1][0];
-        $data['custom_field'] = $email[1][0];  
-        $data['alt_custom_field'] = $rawdata->entry->id;
+        
+        $data['custom_field'] = $data['email'];  
+        $data['alt_custom_field'] = $rawdata->id;
         $data['status_message'] = '';
         $data['bio'] = '';   
-        $data['occupation'] = '';
+        $data['occupation'] = $rawdata->occupation;
         $data['timezone'] = '';
         
-        $data['full_name'] = $rawdata->entry->name->formatted;
-        $data['first_name'] = $rawdata->entry->name->givenName;
-        $data['last_name'] = $rawdata->entry->name->familyName;
-        $data['gender'] = '';
+        $data['full_name'] = $rawdata->displayName;
+        $data['first_name'] = $rawdata->name->givenName;
+        $data['last_name'] = $rawdata->name->familyName;
+        $data['gender'] = $rawdata->gender;
                         
         return $data;
     }
@@ -259,7 +169,54 @@ class google_oauth
     
     function post($message, $url, $oauth_token='', $oauth_token_secret='', $xtra=array())
     {
-        return false;    
+        /*
+        set_include_path(PATH_THIRD.'social_login_pro/google-api-php-client/' . PATH_SEPARATOR . get_include_path());
+        
+        require_once 'Google/Client.php';
+        require_once 'Google/Service/Plus.php';
+        
+        $baseurl = "https://www.googleapis.com/plus/v1/people/me/moments/vault?access_token=".$oauth_token;
+        
+        $plus = new Google_Client();
+        $client->setApplicationName("Client_Library_Examples");
+        $apiKey = "<YOUR_API_KEY>";
+        if ($apiKey == '<YOUR_API_KEY>') {
+          echo missingApiKeyWarning();
+        }
+        $client->setDeveloperKey($apiKey);
+        $moment_body = new Google_Service_Plus_Moment();
+        $moment_body->setType("http://schemas.google.com/AddActivity");
+        $item_scope = new Google_Service_Plus_ItemScope();
+        $item_scope->setDescription($message);
+        $item_scope->setUrl($url);
+        $moment_body->setTarget($item_scope);
+        $momentResult = $plus->moments->insert('me', 'vault', $moment_body);
+        
+
+        
+        var_dump($momentResult);    
+        
+        $google_client = new \Google_Client;
+$google_client->setClientId(GOOGLE_CLIENT_ID);
+$google_client->setClientSecret(GOOGLE_CLIENT_SECRET);
+$google_client->setRedirectUri(GOOGLE_REDIRECT_URI);
+$google_client->setDeveloperKey(GOOGLE_DEVELOPER_KEY);
+$google_client->setAccessType = 'offline';
+
+// Either call:
+//     $google_client->authenticate($auth_code);
+// with the $auth_code returned by the auth page or 
+//     $google_client->setAccessToken($existing_token);
+// with a previously generated access token.
+
+$plus = new \Google_Service_Plus($google_client);
+$person = $plus->people->get('me');
+        
+        */
+
+
+        return true;
+   
     }
     
 }
