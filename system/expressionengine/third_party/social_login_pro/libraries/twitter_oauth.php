@@ -184,8 +184,16 @@ class twitter_oauth
         $data['timezone'] = $rawdata->utc_offset/(60*60);  
         
         $data['full_name'] = $rawdata->name;
-        $data['first_name'] = substr($rawdata->name, 0, strpos($rawdata->name, " "));
-        $data['last_name'] = substr($rawdata->name, strpos($rawdata->name, " ")+1);
+        if (strpos($rawdata->name, " ")===false)
+        {
+            $data['first_name'] = "";
+            $data['last_name'] = $rawdata->name;
+        }
+        else
+        {
+            $data['first_name'] = substr($rawdata->name, 0, strpos($rawdata->name, " "));
+            $data['last_name'] = substr($rawdata->name, strpos($rawdata->name, " ")+1);
+        }
         $data['gender'] = '';
 
         return $data;

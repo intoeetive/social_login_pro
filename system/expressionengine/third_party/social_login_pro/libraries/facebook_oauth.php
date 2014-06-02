@@ -65,7 +65,7 @@ class facebook_oauth
         parse_str($response, $resarray);*/
         //Return the full redirect url and let the user decide what to do from there.
         $scope = "email,user_about_me,user_status";
-        if ($will_post==true) $scope .= ",publish_stream,offline_access";
+        if ($will_post==true) $scope .= ",publish_actions,offline_access";
         $display = ($is_popup==true)?'popup':'page';
         $redirect = "https://www.facebook.com/dialog/oauth?response_type=code&scope=$scope&display=$display&client_id=".$this->_consumer['key']."&redirect_uri=".urlencode($callback);
 
