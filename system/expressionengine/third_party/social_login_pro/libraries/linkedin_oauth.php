@@ -9,7 +9,7 @@ class linkedin_oauth
     const AUTHORIZE_URI = 'www.linkedin.com/uas/oauth/authenticate';
     const REQUEST_URI   = '/uas/oauth/requestToken';
     const ACCESS_URI    = '/uas/oauth/accessToken';
-    const USERINFO_URI    = '/v1/people/~:(id,first-name,last-name,location,public-profile-url,picture-url,headline,summary,current-share)';
+    const USERINFO_URI    = '/v1/people/~:(id,first-name,last-name,location,public-profile-url,picture-url,headline,summary,current-share,email-address)';
     
     //Array that should contain the consumer secret and
     //key which should be passed into the constructor.
@@ -126,11 +126,12 @@ class linkedin_oauth
     {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
-        curl_setopt($ch, CURLOPT_SSLVERSION,3);
+        curl_setopt($ch, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array($auth));
+        if (!is_array($auth)) $auth = array($auth);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $auth);
 
         $response = curl_exec($ch);
         curl_close($ch);
@@ -151,8 +152,11 @@ class linkedin_oauth
                                             'access_token'=>$response['oauth_token'],
                                             'access_secret'=>$response['oauth_token_secret'])));
                                             
-        $response = $this->_connect($oauth['signed_url'], 'Authorization: '.$oauth['header']);
-        
+        //var_dump($response);
+        //array('Authorization: '.$oauth['header'], "Content-Type: text/plain; charset=UTF-8", "x-li-format: json"));
+        $response = $this->_connect($oauth['signed_url'], array());
+        //var_dump($oauth);
+        //var_dump($response);
         if (function_exists('json_decode'))
         {
             $rawdata = json_decode($response);
@@ -169,13 +173,13 @@ class linkedin_oauth
         $data['screen_name'] = $rawdata->firstName.' '.$rawdata->lastName;
         $data['bio'] = ($rawdata->summary!='')?$rawdata->summary:$rawdata->headline;
         $data['occupation'] = $rawdata->headline;
-        $data['email'] = '';
+        $data['email'] = (isset($rawdata->emailAddress))?$rawdata->emailAddress:'';
         $data['location'] = $rawdata->location->name;
         $data['url'] = (isset($rawdata->publicProfileUrl))?$rawdata->publicProfileUrl:'http://www.linkedin.com/profile/view?id='.$rawdata->id;
         $data['custom_field'] = $rawdata->id;
         $data['alt_custom_field'] = $rawdata->id;
         $data['avatar'] = $rawdata->pictureUrl;
-        $data['photo'] = '';
+        $data['photo'] = $rawdata->pictureUrl;
         $data['status_message'] = $rawdata->currentShare->comment;
         $data['timezone'] = '';
         
@@ -224,7 +228,7 @@ class linkedin_oauth
 
         $ch = curl_init($oauth['signed_url']);
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
-        curl_setopt($ch, CURLOPT_SSLVERSION,3);
+        curl_setopt($ch, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

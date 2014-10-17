@@ -117,7 +117,7 @@ $lang = array(
 "Gender (m/f)",
 
 "no_data_for_update" =>
-"There have been no data provided for update",
+"No data was provided to update",
 
 "facebook" =>
 "Facebook",
@@ -237,7 +237,7 @@ $lang = array(
 "",
 
 "google_app_register_url" =>
-"https://www.google.com/accounts/ManageDomains",
+"https://console.developers.google.com/project",
 
 "google_enable_posts" =>
 "Send status updates to user's circles (unsupported yet but coming soon)",
@@ -508,6 +508,41 @@ $lang = array(
 "appdotnet_follow_username_subtext" =>
 "after first login using App.net",
 
+"edmodo" =>
+"Edmodo",
+
+"edmodo_app_id" =>
+"Application  ID",
+
+"edmodo_app_id_subtext" =>
+"required, if you want to use Edmodo",
+
+"edmodo_app_secret" =>
+"Secret",
+
+"edmodo_app_secret_subtext" =>
+"required, if you want to use Edmodo",
+
+"edmodo_custom_field" =>
+"Custom profile field holding Edmodo username",
+
+"edmodo_custom_field_subtext" =>
+"required, if you want to use Edmodo",
+
+"edmodo_app_register_url" =>
+"https://developers.edmodo.com/edmodo-connect/edmodo-connect-overview-getting-started/#app-registration",
+
+"edmodo_enable_posts" =>
+"",
+
+"edmodo_enable_posts_subtext" =>
+"",
+
+"edmodo_follow_username" =>
+"",
+
+"edmodo_follow_username_subtext" =>
+"",
 
 /* END */
 ''=>''
