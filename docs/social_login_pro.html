@@ -133,6 +133,9 @@ NOTE: we are using LinkedIn ID and not URL to identify user, because one can set
 	<h4><a name="instagram"></a>Instagram</h4>
 
 <p>To use Instagram logins, you need to register your site at <a href="http://instagram.com/developer/clients/register/" target="_blank">http://instagram.com/developer/clients/register/</a>. After you finish the registration, you'll be provided Client ID and Client Secret. Input those values into appropriate fields. Select a custom profile field to store Instagram username.</p>
+<p>In your template code for login form, add this parameter:
+<code>callback_uri="/template-url"</code> where /template-url is your OAuth redirect_uri.</p>
+</p>
 <p>If you have Instagram account associated with your site, you can enter it's ID (not username!) and people will be authomatically following it once logged in. You can use <a href="http://yvesvanbroekhoven.github.com/get-your-instagram-user-id/" target="_blank">this link</a> to learn your ID</p>
 <p class="important">Instagram is not sharing user's email address</p>
 

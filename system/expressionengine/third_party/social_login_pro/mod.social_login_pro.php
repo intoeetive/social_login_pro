@@ -549,7 +549,14 @@ myForm.onsubmit = function() {
             return;
 		}
                 
-        $data['username']	= $userdata['username'];
+        if (isset($this->settings[$site_id]['email_is_username']) && $this->settings[$site_id]['email_is_username']==true && $userdata['email']!='')
+        {
+			$data['username']	= $userdata['email'];
+		}        
+        else
+        {
+            $data['username']	= $userdata['username'];
+        }
         
         //need to make sure username is unique
         $this->EE->db->select('username')
@@ -1424,8 +1431,9 @@ window.close();
 
     			if ( isset($sites_list[$next]) )
     			{
-        			$next_qs = array(
-        				'ACT'	=> $this->EE->functions->fetch_action_id('Social_login_pro', 'access_token'),
+        			$act_q = $this->EE->db->select('action_id')->from('actions')->where('class', 'Social_login_pro')->where('method', 'access_token')->get();
+                    $next_qs = array(
+        				'ACT'	=> $act_q->row('action_id'),
         				'sid'		=> $session_id,
         				'cur'	=> $next,
         				'orig'	=> $this->EE->input->get('orig'),
@@ -1543,14 +1551,15 @@ window.close();
             $sites_list = array_filter($sites_list, 'strlen');
 			$current_site	= $this->EE->functions->fetch_site_index();
 
-			if (count($sites) > 1 && in_array($current, $sites))
+			if (count($sites) > 1 && in_array($current_site, $sites))
 			{
 				$orig = array_search($current_site, $sites_list);
 				$next = ($orig == '0') ? '1' : '0';
 
-    			$next_qs = array(
-    				'ACT'	=> $this->EE->functions->fetch_action_id('Social_login_pro', 'access_token'),
-    				'sid'		=> $session_id,
+    			$act_q = $this->EE->db->select('action_id')->from('actions')->where('class', 'Social_login_pro')->where('method', 'access_token')->get();
+                $next_qs = array(
+    				'ACT'	=> $act_q->row('action_id'),
+    				'sid'	=> $session_id,
     				'cur'	=> $next,
     				'orig'	=> $orig,
     				'multi'	=> $this->EE->session->userdata['session_id'],

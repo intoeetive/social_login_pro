@@ -178,6 +178,8 @@ class Social_login_pro_mcp {
         
         $vars['settings']['force_pending_if_no_email']	= form_checkbox('force_pending_if_no_email', 'y', (isset($this->settings[$this->EE->config->item('site_id')]['force_pending_if_no_email'])?$this->settings[$this->EE->config->item('site_id')]['force_pending_if_no_email']:false));
         
+        $vars['settings']['email_is_username']	= form_checkbox('email_is_username', 'y', (isset($this->settings[$this->EE->config->item('site_id')]['email_is_username'])?$this->settings[$this->EE->config->item('site_id')]['email_is_username']:false));
+        
         $this->EE->load->model('status_model');
         $query = $this->EE->status_model->get_statuses();
 		
@@ -335,6 +337,7 @@ class Social_login_pro_mcp {
         $settings[$site_id]['trigger_statuses'] = $_POST["trigger_statuses"];
         $settings[$site_id]['prevent_duplicate_assoc'] = (isset($_POST["prevent_duplicate_assoc"])&&$_POST["prevent_duplicate_assoc"]=='y')?true:false;
         $settings[$site_id]['force_pending_if_no_email'] = (isset($_POST["force_pending_if_no_email"])&&$_POST["force_pending_if_no_email"]=='y')?true:false;
+        $settings[$site_id]['email_is_username'] = (isset($_POST["email_is_username"])&&$_POST["email_is_username"]=='y')?true:false;
         
         $this->EE->db->where('module_name', 'Social_login_pro');
         $this->EE->db->update('modules', array('settings' => serialize($settings)));

@@ -544,6 +544,10 @@ $lang = array(
 "edmodo_follow_username_subtext" =>
 "",
 
+"email_is_username" =>
+"Use email as username (if available)",
+
+
 /* END */
 ''=>''
 );
