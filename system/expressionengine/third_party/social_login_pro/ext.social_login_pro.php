@@ -70,8 +70,13 @@ class Social_login_pro_ext {
     			'method'	=> 'entry_submit',
     			'priority'	=> 10
     		),
-            array(
+            /*array(
     			'hook'		=> 'safecracker_submit_entry_end',
+    			'method'	=> 'entry_submit',
+    			'priority'	=> 10
+    		),*/
+            array(
+    			'hook'		=> 'channel_form_submit_entry_end',
     			'method'	=> 'entry_submit',
     			'priority'	=> 10
     		),
