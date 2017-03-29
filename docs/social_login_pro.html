@@ -112,7 +112,7 @@ The custom field is mandatory and will be used to identify whether person trying
 
 	<h4><a name="linkedin"></a>LinkedIn</h4>
 
-<p>To let people login using LinkedIn, you need to register your website using <a href="https://www.linkedin.com/secure/developer" target="_blank">https://www.linkedin.com/secure/developer</a>. If you only want to let people log in - it is enough to fill only the required fields. Make sure you mark r_emailaddress and r_basicprofile scopes and leave all Redirect URLs empty. After you finish the registration, you'll need to provide module settings with given API key and Secret ket. Select a custom profile field to store LinkedIn ID and choose whether you want to send updates to LinkedIn on user's behalf.<br />
+<p>To let people login using LinkedIn, you need to register your website using <a href="https://www.linkedin.com/secure/developer" target="_blank">https://www.linkedin.com/secure/developer</a>. If you only want to let people log in - it is enough to fill only the required fields. Make sure you mark only r_basicprofile scope and leave all Redirect URLs empty. After you finish the registration, you'll need to provide module settings with given API key and Secret ket. Select a custom profile field to store LinkedIn ID and choose whether you want to send updates to LinkedIn on user's behalf.<br />
 NOTE: we are using LinkedIn ID and not URL to identify user, because one can set the profile to be hidden - but still use it to log in. 
 </p>
 
@@ -175,6 +175,7 @@ NOTE: we are using LinkedIn ID and not URL to identify user, because one can set
 <li><strong>class</strong> &mdash; form CSS class. Defaults to 'social_login_form'</li>
 <li><strong>name</strong> &mdash; form name. Defaults to 'social_login_form'</li>
 <li><strong>popup="yes"</strong> &mdash; open the authentication dialog in popup window</li>
+<li><strong>secure_action="yes"</strong> &mdash; force https usage</li>
 </ul>
 
 <p>Form fields:</p>

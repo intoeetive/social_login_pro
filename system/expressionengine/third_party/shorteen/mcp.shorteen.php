@@ -106,7 +106,7 @@ class Shorteen_mcp {
 
         $this->EE->javascript->output(str_replace(array("\n", "\t"), '', $outputjs));
         
-        if ($this->EE->config->item('app_version')>=260)
+        if (version_compare(APP_VER, '2.6.0', '>='))
         {
         	$this->EE->view->cp_page_title = lang('shorteen_module_name');
         }

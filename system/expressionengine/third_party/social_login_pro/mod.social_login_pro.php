@@ -31,8 +31,6 @@ class Social_login_pro {
     
     var $settings = array();
     
-    var $ee_version = '2.0';
-    
     var $providers = array('twitter', 'facebook', 'linkedin', 'yahoo', 'google', 'vkontakte', 'instagram', 'appdotnet', 'windows', 'edmodo');//, 'weibo');
     
     var $social_login = array();
@@ -49,7 +47,6 @@ class Social_login_pro {
         $this->EE->lang->loadfile('social_login_pro');
         $query = $this->EE->db->query("SELECT settings FROM exp_modules WHERE module_name='Social_login_pro' LIMIT 1");
         if ($query->num_rows()>0) $this->settings = unserialize($query->row('settings')); 
-        $this->ee_version = '2.'.str_replace('.', '', substr(APP_VER, 2));
     }
     /* END */
     
@@ -131,7 +128,12 @@ class Social_login_pro {
         else if ($this->EE->TMPL->fetch_param('callback_uri')!='')
         {
             $data['hidden_fields']['callback_uri'] = $this->EE->functions->create_url($this->EE->TMPL->fetch_param('callback_uri'));
-        }       
+        }      
+        
+        if ($this->EE->TMPL->fetch_param('secure_action')=='yes')
+        {
+            $data['hidden_fields']['secure_action'] = 'yes';
+        } 
         
         
         
@@ -273,6 +275,7 @@ myForm.onsubmit = function() {
 		$this->social_login['anon'] = $this->EE->input->get_post('anon');
         $this->social_login['group_id'] = $this->EE->input->get_post('group_id');
         $this->social_login['is_popup'] = $is_popup;
+        $this->social_login['secure_action'] = $this->EE->input->get_post('secure_action');
         
         if ($this->EE->input->get_post('callback_uri')!='')
         {
@@ -297,9 +300,21 @@ myForm.onsubmit = function() {
         else
         {
             $access_token_url = trim($this->EE->config->item('site_url'), '/').'/?ACT='.$act->row('action_id');
-            if ($provider!='google')
+            if (!in_array($provider, array('google', 'linkedin', 'yahoo')))
             {
                 $access_token_url .= '&sid='.$session_id;
+            }
+        }
+        
+        if ($this->EE->input->get_post('secure_action')=='yes')
+        {
+            if (strpos($access_token_url, '//')===0)
+            {
+                $access_token_url = 'https:'.$access_token_url;
+            }
+            else
+            {
+                $access_token_url = str_replace('http://', 'https://', $access_token_url);
             }
         }
 
@@ -321,7 +336,7 @@ myForm.onsubmit = function() {
             $facebook = new Facebook($fb_config);
             
             $scope = "public_profile,email,user_about_me,user_status";
-            if ($will_post==true) $scope .= ",publish_stream,offline_access";
+            if ($will_post==true) $scope .= ",publish_actions";
             
             $params = array(
               'scope' => $scope,
@@ -376,7 +391,7 @@ myForm.onsubmit = function() {
         
         $upd_data = array();
         
-        if ($this->ee_version < 2.20)
+        if (version_compare(APP_VER, '2.2.0', '<'))
         {
             $temp_password = $upd_data['password'] = $this->EE->functions->hash($this->_random_string());
         }
@@ -418,7 +433,7 @@ myForm.onsubmit = function() {
         }
         else
         {
-            if (in_array($provider, array('vkontakte', 'instagram', 'appdotnet', 'windows', 'google', 'edmodo')))
+            if (in_array($provider, array('vkontakte', 'instagram', 'appdotnet', 'windows', 'google', 'edmodo', 'linkedin', 'yahoo')))
             {
                 if (isset($this->social_login['callback_uri']) && $this->social_login['callback_uri']!='')
                 {
@@ -428,11 +443,24 @@ myForm.onsubmit = function() {
                 {
                     $act = $this->EE->db->query("SELECT action_id FROM exp_actions WHERE class='Social_login_pro' AND method='access_token'");
                     $access_token_url = trim($this->EE->config->item('site_url'), '/').'/?ACT='.$act->row('action_id');
-                    if ($provider!='google')
+                    if (!in_array($provider, array('google', 'linkedin', 'yahoo')))
                     {
                         $access_token_url .= '&sid='.$session_id;
                     }
                 }
+                
+                if (isset($this->social_login['secure_action']) && $this->social_login['secure_action']=='yes')
+                {
+                    if (strpos($access_token_url, '//')===0)
+                    {
+                        $access_token_url = 'https:'.$access_token_url;
+                    }
+                    else
+                    {
+                        $access_token_url = str_replace('http://', 'https://', $access_token_url);
+                    }
+                }
+                
                 $response = $this->EE->$lib->get_access_token($access_token_url, $this->EE->input->get('code'));
                 $this->social_login['oauth_token'] = $response['access_token'];
             }
@@ -521,7 +549,7 @@ myForm.onsubmit = function() {
             if ($query->num_rows()>0)
             {
                 
-				if ($this->ee_version < 2.20)
+				if (version_compare(APP_VER, '2.2.0', '<'))
                 {
                     $this->EE->db->where('member_id', $query->row('member_id'));
                     $this->EE->db->update('members', $upd_data);
@@ -655,10 +683,13 @@ myForm.onsubmit = function() {
 
 		$data['language']	= ($this->EE->config->item('deft_lang')) ? $this->EE->config->item('deft_lang') : 'english';
 		$data['time_format'] = ($this->EE->config->item('time_format')) ? $this->EE->config->item('time_format') : 'us';
-		if ($this->EE->config->item('app_version')<260)
+		if (version_compare(APP_VER, '2.6.0', '<'))
 		{
 			$data['daylight_savings'] = ($this->EE->config->item('default_site_dst') && $this->EE->config->item('default_site_dst') != '') ? $this->EE->config->item('default_site_dst') : $this->EE->config->item('daylight_savings');	
 		}	
+        
+        $data['last_visit'] = $this->EE->localize->now;
+        $data['last_activity'] = $this->EE->localize->now;
 		
         $this->EE->db->query($this->EE->db->insert_string('exp_members', $data));
 
@@ -687,7 +718,7 @@ myForm.onsubmit = function() {
 
 		$this->EE->db->query($this->EE->db->insert_string('exp_member_homepage', array('member_id' => $member_id)));
         
-        if ($this->ee_version < 2.20)
+        if (version_compare(APP_VER, '2.2.0', '<'))
         {
             $this->EE->db->where('member_id', $member_id);
             $this->EE->db->update('members', $upd_data);
@@ -810,14 +841,27 @@ myForm.onsubmit = function() {
         $params = array('key'=>$this->settings[$site_id]["$provider"]['app_id'], 'secret'=>$this->settings[$site_id]["$provider"]['app_secret']);
                 
         $this->EE->load->library($lib, $params);
-        if (in_array($provider, array('facebook', 'vkontakte', 'instagram', 'appdotnet', 'windows', 'google')))
+        if (in_array($provider, array('facebook', 'vkontakte', 'instagram', 'appdotnet', 'windows', 'google', 'linkedin', 'yahoo')))
         {
             $act = $this->EE->db->query("SELECT action_id FROM exp_actions WHERE class='Social_login_pro' AND method='access_token_loggedin'");
             $access_token_url = trim($this->EE->config->item('site_url'), '/').'/?ACT='.$act->row('action_id');
-            if ($provider!='google')
+            if (!in_array($provider, array('google', 'linkedin', 'yahoo')))
             {
                 $access_token_url .= '&sid='.$session_id;
             }
+            
+            if (isset($this->social_login['secure_action']) && $this->social_login['secure_action']=='yes')
+            {
+                if (strpos($access_token_url, '//')===0)
+                {
+                    $access_token_url = 'https:'.$access_token_url;
+                }
+                else
+                {
+                    $access_token_url = str_replace('http://', 'https://', $access_token_url);
+                }
+            }
+            
             $response = $this->EE->$lib->get_access_token($access_token_url, $this->EE->input->get('code'));
             $this->social_login['oauth_token'] = $response['access_token'];
         }
@@ -933,7 +977,18 @@ myForm.onsubmit = function() {
    		
    		$this->EE->db->where('member_id', $this->EE->session->userdata('member_id'));
    		$this->EE->db->update('exp_member_data', $cust_fields);
+        
+        $this->EE->db->where('member_id', $this->EE->session->userdata('member_id'));
+   		$this->EE->db->update('exp_members', array('last_activity' => $this->EE->localize->now));
 		
+        $zoo = $this->EE->db->select('module_id')->from('modules')->where('module_name', 'Zoo_visitor')->get(); 
+        if ($zoo->num_rows()>0)
+        {
+        	$this->EE->load->add_package_path(PATH_THIRD.'zoo_visitor/');
+			$this->EE->load->library('zoo_visitor_lib');
+			$this->EE->zoo_visitor_lib->sync_member_data();
+			$this->EE->load->remove_package_path(PATH_THIRD.'zoo_visitor/');
+        }
         
         if (isset($this->settings[$site_id]["$provider"]['follow_username']) && $this->settings[$site_id]["$provider"]['follow_username']!='')
         {
@@ -1384,7 +1439,7 @@ window.close();
 
     			//start setting cookies
         		$this->EE->input->set_cookie($this->EE->session->c_expire , time()+$expire, $expire);
-                if ($this->ee_version < 2.20)
+                if (version_compare(APP_VER, '2.2.0', '<'))
                 {
             		$this->EE->input->set_cookie($this->EE->session->c_uniqueid , $query->row('unique_id') , $expire);
             		$this->EE->input->set_cookie($this->EE->session->c_password , $temp_password,  $expire);
@@ -1486,7 +1541,7 @@ window.close();
                         ->from('exp_sessions')
                         ->where('member_id', $member_id)
                         ->where('last_activity > ', time() - $this->EE->session->session_length);
-            if ($this->EE->config->item('app_version')<290)
+            if (version_compare(APP_VER, '2.9.0', '<'))
             {            
                         $this->EE->db->where('site_id', $site_id);
             }
@@ -1504,7 +1559,7 @@ window.close();
 
 		//start setting cookies
 		$this->EE->input->set_cookie($this->EE->session->c_expire , time()+$expire, $expire);
-        if ($this->ee_version < 2.20)
+        if (version_compare(APP_VER, '2.2.0', '<'))
         {
     		$this->EE->input->set_cookie($this->EE->session->c_uniqueid , $query->row('unique_id') , $expire);            
     		$this->EE->input->set_cookie($this->EE->session->c_password , $temp_password,  $expire);
@@ -1713,7 +1768,7 @@ window.close();
             return;
 		}	
         
-        if ($this->EE->config->item('app_version')<270)
+        if (version_compare(APP_VER, '2.7.0', '<'))
         {
         if ($this->EE->config->item('secure_forms') == 'y')
 		{
@@ -1746,7 +1801,7 @@ window.close();
         $this->EE->db->where('member_id', $this->EE->session->userdata('member_id'));
         $this->EE->db->update('members', $upd_data);
         
-        if ($this->EE->config->item('app_version')<270)
+        if (version_compare(APP_VER, '2.7.0', '<'))
         {
         if ($this->EE->config->item('secure_forms') == 'y')
 		{

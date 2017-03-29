@@ -172,7 +172,7 @@ class facebook_oauth
     function get_user_data($response = array())
     {
         $access_token = $response['access_token'];
-        $baseurl = self::SCHEME.'://'.self::HOST.self::USERINFO_URI."?access_token=".$access_token;
+        $baseurl = self::SCHEME.'://'.self::HOST.self::USERINFO_URI."?fields=id,name,email,location,link,timezone,first_name,last_name,gender&access_token=".$access_token;
 
         $response = $this->_connect($baseurl, array());
        
@@ -190,7 +190,7 @@ class facebook_oauth
         $data = array();
         $data['username'] = (isset($rawdata->username))?$rawdata->username:$rawdata->id.'@facebook';
         $data['screen_name'] = $rawdata->name;
-        $data['bio'] = $rawdata->bio;
+        $data['bio'] = '';//$rawdata->bio;
         $data['occupation'] = '';
         $data['email'] = (isset($rawdata->email))?$rawdata->email:'';
         $data['location'] = $rawdata->location->name;
@@ -226,6 +226,20 @@ class facebook_oauth
                 break;
             }
         }
+        
+        /*
+        $baseurl = 'https://graph.facebook.com/'.$data['alt_custom_field'].'?fields=cover&access_token='.$access_token;
+        $response = $this->_connect($baseurl, array());
+        if (function_exists('json_decode'))
+        {
+            $rawdata = json_decode($response);
+        }
+        else
+        {
+            $rawdata = $json->decode($response);
+        }        
+        $data['photo'] = (isset($rawdata->cover->source))?$rawdata->cover->source:$data['photo'];
+        */
 
         return $data;
     }

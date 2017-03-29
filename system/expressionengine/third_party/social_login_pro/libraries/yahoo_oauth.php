@@ -6,9 +6,9 @@ class yahoo_oauth
 {
     const SCHEME = 'https';
     const HOST = 'api.login.yahoo.com';
-    const AUTHORIZE_URI = '/oauth/v2/request_auth';
+    const AUTHORIZE_URI = '/oauth2/request_auth';
     const REQUEST_URI   = '/oauth/v2/get_request_token';
-    const ACCESS_URI    = '/oauth/v2/get_token';
+    const ACCESS_URI    = '/oauth2/get_token';
 
     //Array that should contain the consumer secret and
     //key which should be passed into the constructor.
@@ -46,28 +46,12 @@ class yahoo_oauth
      */
     public function get_request_token($callback, $will_post=true, $session_id=false)
     {
-        $baseurl = self::SCHEME.'://'.self::HOST.self::REQUEST_URI;
+        $redirect = self::SCHEME.'://'.self::HOST.self::AUTHORIZE_URI."?response_type=code&scope=$scope&state=$session_id&client_id=".$this->_consumer['key']."&redirect_uri=".urlencode($callback);
 
-        //Generate an array with the initial oauth values we need
-        $auth = build_auth_array($baseurl, $this->_consumer['key'], $this->_consumer['secret'],
-                                 array('oauth_callback'=>urlencode($callback)),
-                                 $this->_consumer['method'], $this->_consumer['algorithm']);
-        //Create the "Authorization" portion of the header
-        $str = '';
-        foreach($auth AS $key=>$value)
-            if($key != 'scope')$str .= ",{$key}=\"{$value}\"";//Do not include scope in the Authorization string.
-        $str = substr($str, 1);
-        $str = 'Authorization: OAuth '.$str;
-        //Send it
-        $response = $this->_connect($baseurl, $str);
-        //We should get back a request token and secret which
-        //we will add to the redirect url.
-        parse_str($response, $resarray);
-        //Return the full redirect url and let the user decide what to do from there.
-        $redirect = self::SCHEME.'://'.self::HOST.self::AUTHORIZE_URI."?oauth_token=".$resarray['oauth_token']."&S=".$session_id;
-        //If they are using HMAC then we need to return the token secret for them to store.
-        if($this->_consumer['algorithm'] == OAUTH_ALGORITHMS::RSA_SHA1)return $redirect;
-        else return array('token_secret'=>$resarray['oauth_token_secret'], 'redirect'=>$redirect);
+        //$response = $this->_connect($redirect, '');
+        //var_dump($response);
+        header("Location: $redirect");
+        exit();
     }
 
     /**
@@ -80,35 +64,53 @@ class yahoo_oauth
      * @param string $verifier this is the oauth_verifier returned with your callback url
      * @return array access token and token secret
      */
-    public function get_access_token($token = false, $secret = false, $verifier = false)
+    public function get_access_token($callback = false, $secret = false)
     {
-        //If no request token was specified then attempt to get one from the url
-        if($token === false && isset($_GET['oauth_token']))$token = $_GET['oauth_token'];
-        if($verifier === false && isset($_GET['oauth_verifier']))$verifier = $_GET['oauth_verifier'];
-        //If all else fails attempt to get it from the request uri.
-        if($token === false && $verifier === false)
-        {
-            $uri = $_SERVER['REQUEST_URI'];
-            $uriparts = explode('?', $uri);
-
-            $authfields = array();
-            parse_str($uriparts[1], $authfields);
-            $token = $authfields['oauth_token'];
-            $verifier = $authfields['oauth_verifier'];
-        }
-
-        $tokenddata = array('oauth_token'=>urlencode($token), 'oauth_verifier'=>urlencode($verifier));
+        $baseurl = self::SCHEME.'://'.self::HOST.self::ACCESS_URI;
+        
         if($secret !== false)$tokenddata['oauth_token_secret'] = urlencode($secret);
 
-        $baseurl = self::SCHEME.'://'.self::HOST.self::ACCESS_URI;
-        //Include the token and verifier into the header request.
-        $auth = get_auth_header($baseurl, $this->_consumer['key'], $this->_consumer['secret'],
-                                $tokenddata, $this->_consumer['method'], $this->_consumer['algorithm']);
-        $response = $this->_connect($baseurl, $auth);
+        $data_str = "client_id=".$this->_consumer['key']."&client_secret=".$this->_consumer['secret']."&code=".urlencode($secret)."&grant_type=authorization_code"."&redirect_uri=".urlencode($callback);
+        
+        $ch = curl_init($baseurl);
+        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                                            'Authorization: Basic '.base64_encode($this->_consumer['key'].':'.$this->_consumer['secret']),
+                                            'Content-Type: application/x-www-form-urlencoded'
+                                            ));
+        
+        curl_setopt($ch,CURLOPT_POST,true);
+        curl_setopt($ch,CURLOPT_POSTFIELDS,$data_str);
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
         //Parse the response into an array it should contain
         //both the access token and the secret key. (You only
         //need the secret key if you use HMAC-SHA1 signatures.)
-        parse_str($response, $oauth);
+        if (function_exists('json_decode'))
+        {
+            $a = json_decode($response);
+        }
+        else
+        {
+            require_once(PATH_THIRD.'social_login_pro/libraries/inc/JSON.php');
+            $json = new Services_JSON();
+            $a = $json->decode($response);
+        }
+        
+        if (strpos($response, 'error')!==false)
+        {
+            $oauth['oauth_problem'] = $a->error;
+        } 
+        else
+        {                            
+            $oauth['access_token'] = $a->access_token;        
+        }   
+
         //Return the token and secret for storage
         return $oauth;
     }
@@ -136,24 +138,22 @@ class yahoo_oauth
     }
     
     
-    function get_user_data($response = array())
+    function get_user_data($token_response = array())
     {
-        require_once(PATH_THIRD.'social_login_pro/libraries/inc/OAuthSimple.php');
         
-        $xoauth_yahoo_guid = $response['xoauth_yahoo_guid'];
-        $oauth_token = $response['oauth_token'];
-        $oauth_token_secret = $response['oauth_token_secret'];
-        $baseurl = "http://social.yahooapis.com/v1/user/".$xoauth_yahoo_guid."/profile";
+        $baseurl = "https://social.yahooapis.com/v1/user/me/profile?format=json";
     
-        $oauth_obj = new OAuthSimple();
-        $oauth = $oauth_obj->sign(Array('path'=>$baseurl,
-                        'parameters'=>Array('format'=>'json'),
-                        'signatures'=> Array('consumer_key'=>$this->_consumer['key'],
-                                            'shared_secret'=>$this->_consumer['secret'],
-                                            'access_token'=>$response['oauth_token'],
-                                            'access_secret'=>$response['oauth_token_secret'])));
+        $ch = curl_init($baseurl);
+        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                                            'Authorization: Bearer '.$token_response['access_token']
+                                            ));
 
-        $response = $this->_connect($oauth['signed_url'], array());    
+        $response = curl_exec($ch);
+        curl_close($ch);
 
         if (function_exists('json_decode'))
         {
@@ -165,7 +165,7 @@ class yahoo_oauth
             $json = new Services_JSON();
             $rawdata = $json->decode($response);
         }
-
+        
         $data = array();
         $username = $rawdata->profile->guid;
         foreach ($rawdata->profile->ims as $im)
@@ -210,30 +210,11 @@ class yahoo_oauth
         $data['first_name'] = $rawdata->profile->givenName;
         $data['last_name'] = $rawdata->profile->familyName;
         $data['gender'] = $rawdata->profile->gender;
-        
-        $baseurl = "http://social.yahooapis.com/v1/user/".$xoauth_yahoo_guid."/profile/status";
-    
-        $oauth_obj = new OAuthSimple();
-        $oauth = $oauth_obj->sign(Array('path'=>$baseurl,
-                        'parameters'=>Array('format'=>'json'),
-                        'signatures'=> Array('consumer_key'=>$this->_consumer['key'],
-                                            'shared_secret'=>$this->_consumer['secret'],
-                                            'access_token'=>$oauth_token,
-                                            'access_secret'=>$oauth_token_secret)));
-
-        $response = $this->_connect($oauth['signed_url'], array());    
-
-        if (function_exists('json_decode'))
-        {
-            $rawdata = json_decode($response);
-        }
-        else
-        {
-            $rawdata = $json->decode($response);
-        }
-        $data['status_message'] = $rawdata->status->message;
+        $data['status_message'] = urldecode($rawdata->status->message);
         
         return $data;
+
+        
     }
     
     

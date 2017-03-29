@@ -40,7 +40,7 @@ class Social_login_pro_mcp {
         $this->EE->lang->loadfile('shorteen');
         $this->EE->lang->loadfile('social_login_pro');
         
-        if ($this->EE->config->item('app_version')>=260)
+        if (version_compare(APP_VER, '2.6.0', '>='))
         {
         	$this->EE->view->cp_page_title = lang('social_login_pro_module_name');
         }

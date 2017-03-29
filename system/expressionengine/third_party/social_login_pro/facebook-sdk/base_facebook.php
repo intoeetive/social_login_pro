@@ -790,7 +790,11 @@ abstract class BaseFacebook
     }
 
     $response_params = array();
-    parse_str($access_token_response, $response_params);
+    $response_json = json_decode($access_token_response);
+    $response_params['access_token'] = $response_json->access_token;
+    $response_params['token_type'] = $response_json->token_type;
+    $response_params['expires_in'] = $response_json->expires_in;
+    //parse_str($access_token_response, $response_params);
     if (!isset($response_params['access_token'])) {
       return false;
     }

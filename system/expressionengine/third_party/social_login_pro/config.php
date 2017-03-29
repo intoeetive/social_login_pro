@@ -3,7 +3,7 @@
 if ( ! defined('SOCIAL_LOGIN_PRO_ADDON_NAME'))
 {
 	define('SOCIAL_LOGIN_PRO_ADDON_NAME',         'Social Login PRO');
-	define('SOCIAL_LOGIN_PRO_ADDON_VERSION',      '1.8.3');
+	define('SOCIAL_LOGIN_PRO_ADDON_VERSION',      '1.8.9');
 }
 
 $config['name']=SOCIAL_LOGIN_PRO_ADDON_NAME;
